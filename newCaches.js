@@ -316,8 +316,12 @@ class Map {
 			alert("Empty cache file");
 		else {
 			for(let i = 0 ; i < xs.length ; i++)  // Ignore the disabled caches
-				if( getFirstValueByTagName(xs[i], "status") === STATUS_ENABLED )
-					caches.push(new Cache(xs[i]));
+				if( getFirstValueByTagName(xs[i], "status") === STATUS_ENABLED ){
+					let ca = new Cache(xs[i]);
+					caches.push(ca);
+					if(ca.kind == 'Traditional')
+						ca.installCircle(CACHE_RADIUS, 'red');
+				}
 		}
 		return caches;
 	}
