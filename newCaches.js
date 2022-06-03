@@ -49,6 +49,8 @@ const CACHE_KINDS = ["CITO", "Earthcache", "Event",
 	"Traditional", "Virtual", "Webcam", "Wherigo"];
 const CACHE_RADIUS =
 	161	// meters
+const MAX_CACHE_DISTANCE =
+	400 //meters
 const CACHES_FILE_NAME =
 	"caches.xml";
 const STATUS_ENABLED =
@@ -106,6 +108,11 @@ function getFirstValueByTagName(xml, name)  {
 
 function kindIsPhysical(kind) {
 	return kind === "Traditional";
+}
+
+function txt2xml(txt) {
+    let parser = new DOMParser();
+    return parser.parseFromString(txt,"text/xml");
 }
 
 
@@ -171,6 +178,35 @@ class Cache extends POI {
 	}
 }
 
+
+class AddedCache extends Cache {
+	constructor(lat, lng) {
+		let txt =
+          `<cache>
+            <code>UNKNOWN</code>
+            <name>UNKNOWN</name>
+            <owner>UNKNOWN</owner>
+            <latitude>${lat}</latitude>
+            <longitude>${lng}</longitude>
+            <altitude>-32768</altitude>
+            <kind>Traditional</kind>
+            <size>UNKNOWN</size>
+            <difficulty>1</difficulty>
+            <terrain>1</terrain>
+            <favorites>0</favorites>
+            <founds>0</founds>
+            <not_founds>0</not_founds>
+            <state>UNKNOWN</state>
+            <county>UNKNOWN</county>
+            <publish>2000/01/01</publish>
+            <status>E</status>
+            <last_log>2000/01/01</last_log>
+          </cache>`;
+        let xml = txt2xml(txt);
+		super(xml)
+	}
+}
+
 class Place extends POI {
 	constructor(name, pos) {
 		super(null);
@@ -191,10 +227,20 @@ class Map {
 		this.caches = [];
 		this.addClickHandler(e =>
 			L.popup()
-			.setLatLng(e.latlng)
-			.setContent("You clicked the map at " + e.latlng.toString())
+			.setLatLng(e.latlng) 
+			.setContent(`
+				<p>You clicked the map at  + ${e.latlng.toString()}</p>
+				<a href=" http://maps.google.com/maps?layer=c&cbll=${e.latlng.lat}, ${e.latlng.lng}" target="_blank">
+    			<button>Street View</button>
+  				</a>
+
+				<button onClick="addCache(${e.latlng.lat}, ${e.latlng.lng})">New Cache</button>
+				
+		`)
 		);
+		
 	}
+	
 
 	populate() {
 		this.caches = this.loadCaches(RESOURCES_DIR + CACHES_FILE_NAME);
@@ -276,6 +322,10 @@ class Map {
 		return caches;
 	}
 
+	addCache(cache) {
+		this.caches.push(cache);
+	}
+
 	add(marker) {
 		marker.addTo(map.lmap);
 	}
@@ -291,6 +341,27 @@ class Map {
 		}
 		return this.lmap.on('click', handler2);
 	}
+
+	validateLocation(lat, lng) {
+		let minimumDistance = Number.POSITIVE_INFINITY;
+
+		this.caches.forEach(cache => {
+			const distance = haversine(cache.latitude, cache.longitude, lat, lng) * 1000;//km to m
+			if (distance < minimumDistance) {
+				minimumDistance = distance;
+			}
+		})
+
+		if (minimumDistance < CACHE_RADIUS) {
+			return {error: `Cache is too close: ${minimumDistance.toFixed(1)}m to nearest cache, minimum is ${CACHE_RADIUS}m`}
+		}
+
+		if (minimumDistance > MAX_CACHE_DISTANCE) {
+			return {error: `Cache is too far: ${minimumDistance.toFixed(1)}m to nearest cache, maximum is ${MAX_CACHE_DISTANCE}m`}
+		}
+
+		return true;
+	}
 }
 
 
@@ -304,5 +375,14 @@ function onLoad()
 	map = new Map(MAP_INITIAL_CENTRE, MAP_INITIAL_ZOOM);
 	map.showFCT();
 	map.populate();
+}
+
+function addCache(lat, lng) {
+	const locationValidity = map.validateLocation(lat, lng);
+	if (locationValidity.error) {
+		alert(locationValidity.error)
+	} else {
+		map.addCache(new AddedCache(lat, lng))
+	}
 }
 
