@@ -181,7 +181,7 @@ class Cache extends POI {
 			case "Mystery":
 			case "Letterbox": 
 				this.marker.bindPopup(`I'm the marker of the cache ${this.name}.
-									  <p><button onClick="changeCacheLocation(${this.code}, 38.658705, -9.228687)">Change Location</button>
+									  <p><button onClick="changeCacheLocation('${this.code}')">Change Location</button>
 									  <a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
     								  <button>Info</button>
   									  </a></p>`); break;
@@ -201,6 +201,29 @@ class Cache extends POI {
 	
 	disableDragging() {
 		this.marker.dragging.disable();
+	}
+
+	changeLocation() {
+		alert('Drag the marker to the new location.')
+		this.enableDragging();
+
+		this.marker.once('dragend', e => this.changeLocationHandler(e))
+	}
+
+	changeLocationHandler(event) {
+		this.disableDragging();
+		const {lat, lng} = this.marker.getLatLng(); //new location
+
+		const locationValidity = map.validateLocation(lat, lng);
+
+		if (locationValidity === true) {
+			this.latitude = lat;
+			this.longitude = lng;
+			alert(`Location of ${this.name} changed to ${lat}, ${lng}`)
+		} else {
+			this.marker.setLatLng({lat: this.latitude, lng: this.longitude}); //revert marker location
+			alert(locationValidity.error);
+		}
 	}
 }
 
@@ -407,14 +430,18 @@ class Map {
 		statistics.updatePresentationLayer();
 	}
 
+	getCacheByCode(code) {
+		for (const cache of this.caches) {
+			if(cache.code == code){
+				return cache;
+			}	
+		}
+		return null;
+	}
 
-	changeCacheLocation(code, lat, lng) {
-		this.caches.forEach(function (e) {
-			if(e.code == code){
-				e.latitude = lat;
-				e.longitude = lng;
-			}
-		})
+
+	changeCacheLocation(code) {
+		this.getCacheByCode(code).changeLocation();
 	}
 }
 
@@ -491,7 +518,7 @@ function addCache(lat, lng) {
 	}
 }
 
-function changeCacheLocation(code, lat, lng) {
-	map.changeCacheLocation(code, lat, lng);
+function changeCacheLocation(code) {
+	map.changeCacheLocation(code);
 }
 
