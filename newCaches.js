@@ -455,7 +455,9 @@ function addCache(lat, lng) {
 	if (locationValidity.error) {
 		alert(locationValidity.error)
 	} else {
-		map.addCache(new AddedCache(lat, lng).installCircle(CACHE_RADIUS, 'green'))
+		const newCache = new AddedCache(lat, lng);
+		map.addCache(newCache);
+		newCache.installCircle(CACHE_RADIUS, 'green');
 	}
 }
 
