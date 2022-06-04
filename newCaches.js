@@ -178,7 +178,9 @@ class Cache extends POI {
 		switch(this.kind) {
 			case "Multi":
 			case "Mystery":
-			case "Letterbox": this.marker.bindPopup("I'm the marker of the cache <b>" + this.name + '</b>.<p><button type="button" onclick="">Add Coordinates</button></p>'); break;
+			case "Letterbox": 
+				this.marker.bindPopup(`I'm the marker of the cache ${this.name}.
+									  <p><button onClick="">Register Location</button></p>`); break;
 			default:	
 				this.marker.bindPopup("I'm the marker of the cache <b>" + this.name + "</b>."); break;
 		
@@ -395,7 +397,7 @@ function addCache(lat, lng) {
 	if (locationValidity.error) {
 		alert(locationValidity.error)
 	} else {
-		map.addCache(new AddedCache(lat, lng))
+		map.addCache(new AddedCache(lat, lng).installCircle(CACHE_RADIUS, 'green'))
 	}
 }
 
