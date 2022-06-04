@@ -173,7 +173,18 @@ class Cache extends POI {
 		let pos = [this.latitude, this.longitude];
 		this.marker = L.marker(pos, {icon: map.getIcon(this.kind)});
 		this.marker.bindTooltip(this.name);
-		this.marker.bindPopup("I'm the marker of the cache <b>" + this.name + "</b>.");
+
+		//Button function TBD
+		switch(this.kind) {
+			case "Multi":
+			case "Mystery":
+			case "Letterbox": 
+				this.marker.bindPopup(`I'm the marker of the cache ${this.name}.
+									  <p><button onClick="">Register Location</button></p>`); break;
+			default:	
+				this.marker.bindPopup("I'm the marker of the cache <b>" + this.name + "</b>."); break;
+		
+		}
 		map.add(this.marker);
 	}
 }
@@ -444,7 +455,7 @@ function addCache(lat, lng) {
 	if (locationValidity.error) {
 		alert(locationValidity.error)
 	} else {
-		map.addCache(new AddedCache(lat, lng))
+		map.addCache(new AddedCache(lat, lng).installCircle(CACHE_RADIUS, 'green'))
 	}
 }
 
