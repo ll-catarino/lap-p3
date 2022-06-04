@@ -172,7 +172,6 @@ class Cache extends POI {
 	installMarker() {
 		let pos = [this.latitude, this.longitude];
 		this.marker = L.marker(pos, {icon: map.getIcon(this.kind)});
-		let mark = this.marker;
 		this.marker.bindTooltip(this.name);
 
 		//Button function TBD
@@ -192,6 +191,11 @@ class Cache extends POI {
 				  					  </a></p>`); break;
 		
 		}
+		//To add the function excluse to added caches
+		if(this.constructor.name == 'AddedCache'){
+			this.marker.bindPopup(`${this.marker.getPopup().getContent()}<button>Change Location</button><button>Delete</button>`)
+		}
+
 		map.add(this.marker);
 	}
 
@@ -203,7 +207,6 @@ class Cache extends POI {
 		this.marker.dragging.disable();
 	}
 }
-
 
 class AddedCache extends Cache {
 	constructor(lat, lng) {
