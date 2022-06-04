@@ -244,6 +244,8 @@ class Map {
 
 	populate() {
 		this.caches = this.loadCaches(RESOURCES_DIR + CACHES_FILE_NAME);
+
+		this.updateStatistics();
 	}
 
 	showFCT() {
@@ -326,8 +328,14 @@ class Map {
 		return caches;
 	}
 
+	/**
+	 * Adds cache to the map
+	 * @param {Cache} cache chache to be added
+	 */
 	addCache(cache) {
 		this.caches.push(cache);
+
+		this.updateStatistics();
 	}
 
 	add(marker) {
@@ -366,7 +374,57 @@ class Map {
 
 		return true;
 	}
+
+	updateStatistics() {
+		let statistics = new Statistics(this.caches);
+		statistics.updatePresentationLayer();
+	}
 }
+
+class Statistics {
+	constructor(caches) {
+		this.caches = caches;
+	}
+
+	updatePresentationLayer() {
+		let statisticsElement = document.querySelector('#statistics'); //querying for the element with id="statistics"
+
+		// Cache by kind statistics:
+		const cachesByKind = this.getNumberOfCachesOfEachKind();
+
+		for (const pair of Object.entries(cachesByKind)) {
+			const kind = pair[0];
+			const amount = pair[1];
+			
+			try {//TODO
+				let line = statisticsElement.querySelector(`#shapeByKind:${kind}`);
+
+				line.querySelector('span').innerHTML = amount;
+			} catch (error) {
+				let line = document.createElement('p');
+				line.innerHTML = `<p id="shapeByKind:${kind}" style="padding-left: 12px; margin: 0;">${kind}: <span >${amount}</span></p>`;
+				statisticsElement.appendChild(line);
+			}
+			
+		}
+
+	}
+
+	getNumberOfCachesOfEachKind() {
+		let result = {};
+		this.caches.forEach(cache => {
+			if (result[cache.kind]) {
+				result[cache.kind]++;
+			} else {
+				result[cache.kind] = 1;
+			}
+		})
+		return result;
+	}
+
+}
+
+
 
 
 /* Some FUNCTIONS are conveniently placed here to be directly called from HTML.
