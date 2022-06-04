@@ -1,6 +1,6 @@
 /*     New Caches
 
-Aluno 1: ?number ?name <-- mandatory to fill
+Aluno 1: 55100 Lourenco Catarino <-- mandatory to fill
 Aluno 2: ?number ?name <-- mandatory to fill
 
 Comment:
@@ -178,10 +178,10 @@ class Cache extends POI {
 					<h4>I'm the marker of the cache ${this.name}</h4>
 					<a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
     					<button>Info</button>
-  					</a></p>
+  					</a>
 		`
 
-		const changeLocationButton = `<p><button onClick="changeCacheLocation('${this.code}')">Change Location</button>`
+		const changeLocationButton = `<p><button onClick="changeCacheLocation('${this.code}')">Change Location</button></p>`
 
 		const deleteButton = `<button onClick="deleteCache('${this.code}')">Delete</button>`
 		//Button function TBD
@@ -204,20 +204,31 @@ class Cache extends POI {
 
 	enableDragging() {
 		this.marker.dragging.enable();
+
+		if (this.circle) {
+			this.marker.on('drag', e => {
+				this.circle.setLatLng(e.latlng)
+				this.circle.redraw()
+			})
+		}
 	}
 	
 	disableDragging() {
 		this.marker.dragging.disable();
+		
+		if (this.circle) {
+			this.marker.off('drag');
+		}
 	}
 
 	changeLocation() {
 		alert('Drag the marker to the new location.')
 		this.enableDragging();
 
-		this.marker.once('dragend', e => this.changeLocationHandler(e))
+		this.marker.once('dragend', () => this.changeLocationHandler())
 	}
 
-	changeLocationHandler(event) {
+	changeLocationHandler() {
 		this.disableDragging();
 		const {lat, lng} = this.marker.getLatLng(); //new location
 
