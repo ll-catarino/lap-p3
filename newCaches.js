@@ -24,7 +24,7 @@ Leaflet documentation: https://leafletjs.com/reference.html
 /* GLOBAL CONSTANTS */
 
 const MAP_INITIAL_CENTRE =
-	[38.661,-9.2044];  // FCT coordinates
+	[38.661, -9.2044];  // FCT coordinates
 const MAP_INITIAL_ZOOM =
 	14
 const MAP_ID =
@@ -43,7 +43,7 @@ const MAP_LAYERS =
 //const RESOURCES_DIR =
 //	"http//ctp.di.fct.unl.pt/lei/lap/projs/proj2122-3/resources/";
 const RESOURCES_DIR =
- 	"resources/";
+	"resources/";
 const CACHE_KINDS = ["CITO", "Earthcache", "Event",
 	"Letterbox", "Mega", "Multi", "Mystery", "Other",
 	"Traditional", "Virtual", "Webcam", "Wherigo"];
@@ -66,43 +66,40 @@ let map = null;
 /* USEFUL FUNCTIONS */
 
 // Capitalize the first letter of a string.
-function capitalize(str)
-{
+function capitalize(str) {
 	return str.length > 0
-			? str[0].toUpperCase() + str.slice(1)
-			: str;
+		? str[0].toUpperCase() + str.slice(1)
+		: str;
 }
 
 // Distance in km between to pairs of coordinates over the earth's surface.
 // https://en.wikipedia.org/wiki/Haversine_formula
-function haversine(lat1, lon1, lat2, lon2)
-{
-    function toRad(deg) { return deg * 3.1415926535898 / 180.0; }
-    let dLat = toRad(lat2 - lat1), dLon = toRad (lon2 - lon1);
-    let sa = Math.sin(dLat / 2.0), so = Math.sin(dLon / 2.0);
-    let a = sa * sa + so * so * Math.cos(toRad(lat1)) * Math.cos(toRad(lat2));
-    return 6372.8 * 2.0 * Math.asin (Math.sqrt(a));
+function haversine(lat1, lon1, lat2, lon2) {
+	function toRad(deg) { return deg * 3.1415926535898 / 180.0; }
+	let dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+	let sa = Math.sin(dLat / 2.0), so = Math.sin(dLon / 2.0);
+	let a = sa * sa + so * so * Math.cos(toRad(lat1)) * Math.cos(toRad(lat2));
+	return 6372.8 * 2.0 * Math.asin(Math.sqrt(a));
 }
 
-function loadXMLDoc(filename)
-{
+function loadXMLDoc(filename) {
 	let xhttp = new XMLHttpRequest();
 	xhttp.open("GET", filename, false);
 	try {
 		xhttp.send();
 	}
-	catch(err) {
+	catch (err) {
 		alert("Could not access the geocaching database via AJAX.\n"
 			+ "Therefore, no POIs will be visible.\n");
 	}
-	return xhttp.responseXML;	
+	return xhttp.responseXML;
 }
 
-function getAllValuesByTagName(xml, name)  {
+function getAllValuesByTagName(xml, name) {
 	return xml.getElementsByTagName(name);
 }
 
-function getFirstValueByTagName(xml, name)  {
+function getFirstValueByTagName(xml, name) {
 	return getAllValuesByTagName(xml, name)[0].childNodes[0].nodeValue;
 }
 
@@ -111,8 +108,17 @@ function kindIsPhysical(kind) {
 }
 
 function txt2xml(txt) {
-    let parser = new DOMParser();
-    return parser.parseFromString(txt,"text/xml");
+	let parser = new DOMParser();
+	return parser.parseFromString(txt, "text/xml");
+}
+
+function generateCSS(style) {
+	let result = '"';
+
+	for (const property of Object.keys(style)) {
+		result += `${property}: ${style[property]}; `;
+	}
+	return result+='"';
 }
 
 
@@ -124,7 +130,7 @@ class POI {
 	}
 
 	decodeXML(xml) {
-		if(xml === null)
+		if (xml === null)
 			return;
 		this.name = getFirstValueByTagName(xml, "name");
 		this.latitude = getFirstValueByTagName(xml, "latitude");
@@ -133,10 +139,10 @@ class POI {
 
 	installCircle(radius, color) {
 		let pos = [this.latitude, this.longitude];
-		let style = {color: color, fillColor: color, weight: 1, fillOpacity: 0.1};
+		let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
 		this.circle = L.circle(pos, radius, style);
 		this.circle.bindTooltip(this.name);
-		map.add(this.circle);	
+		map.add(this.circle);
 	}
 }
 
@@ -171,32 +177,43 @@ class Cache extends POI {
 
 	installMarker() {
 		let pos = [this.latitude, this.longitude];
-		this.marker = L.marker(pos, {icon: map.getIcon(this.kind)});
+		this.marker = L.marker(pos, { icon: map.getIcon(this.kind) });
 		this.marker.bindTooltip(this.name);
+
+		const infoButtonStyle = {
+			"font-size":"20px",
+			"background-color":"green",
+			color:"white",
+			border:"none",
+			"border-radius":"8px"
+		}
 
 		const basePopup = `
 					<h4>I'm the marker of the cache ${this.name}</h4>
 					<a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
-    					<button>Info</button>
+    					<button style=${generateCSS(infoButtonStyle)}>Info</button>
   					</a>
+					<a href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
+					 	<button>Street View</button>
+					</a>
 		`
 
 		const changeLocationButton = `<p><button onClick="changeCacheLocation('${this.code}')">Change Location</button></p>`
 
 		const deleteButton = `<button onClick="deleteCache('${this.code}')">Delete</button>`
 		//Button function TBD
-		switch(this.kind) {
+		switch (this.kind) {
 			case "Multi":
 			case "Mystery":
-			case "Letterbox": 
+			case "Letterbox":
 				this.marker.bindPopup(basePopup + changeLocationButton); break;
-			default:	
+			default:
 				this.marker.bindPopup(basePopup); break;
-		
+
 		}
 		//To add the function excluse to added caches
-		if(this.constructor.name == 'AddedCache'){
-			this.marker.bindPopup( basePopup + changeLocationButton + deleteButton)
+		if (this.constructor.name == 'AddedCache') {
+			this.marker.bindPopup(basePopup + changeLocationButton + deleteButton)
 		}
 
 		map.add(this.marker);
@@ -212,10 +229,10 @@ class Cache extends POI {
 			})
 		}
 	}
-	
+
 	disableDragging() {
 		this.marker.dragging.disable();
-		
+
 		if (this.circle) {
 			this.marker.off('drag');
 		}
@@ -230,7 +247,7 @@ class Cache extends POI {
 
 	changeLocationHandler() {
 		this.disableDragging();
-		const {lat, lng} = this.marker.getLatLng(); //new location
+		const { lat, lng } = this.marker.getLatLng(); //new location
 
 		const locationValidity = map.validateLocation(lat, lng);
 
@@ -239,7 +256,7 @@ class Cache extends POI {
 			this.longitude = lng;
 			alert(`Location of ${this.name} changed to ${lat}, ${lng}`)
 		} else {
-			this.marker.setLatLng({lat: this.latitude, lng: this.longitude}); //revert marker location
+			this.marker.setLatLng({ lat: this.latitude, lng: this.longitude }); //revert marker location
 			alert(locationValidity.error);
 		}
 	}
@@ -255,9 +272,10 @@ class Cache extends POI {
 
 class AddedCache extends Cache {
 	constructor(lat, lng) {
+		let id = map.generateNewCacheId();
 		let txt =
-          `<cache>
-            <code>UNKNOWN</code>
+			`<cache>
+            <code>NGC${id}</code>
             <name>UNKNOWN</name>
             <owner>UNKNOWN</owner>
             <latitude>${lat}</latitude>
@@ -276,7 +294,7 @@ class AddedCache extends Cache {
             <status>E</status>
             <last_log>2000/01/01</last_log>
           </cache>`;
-        let xml = txt2xml(txt);
+		let xml = txt2xml(txt);
 		super(xml)
 	}
 }
@@ -301,8 +319,8 @@ class Map {
 		this.caches = [];
 		this.addClickHandler(e =>
 			L.popup()
-			.setLatLng(e.latlng) 
-			.setContent(`
+				.setLatLng(e.latlng)
+				.setContent(`
 				<p>You clicked the map at  + ${e.latlng.toString()}</p>
 				<a href=" http://maps.google.com/maps?layer=c&cbll=${e.latlng.lat}, ${e.latlng.lng}" target="_blank">
     			<button>Street View</button>
@@ -312,9 +330,10 @@ class Map {
 				
 		`)
 		);
-		
+		this.addedCacheCounter = 0; //for generating cache id
+
 	}
-	
+
 
 	populate() {
 		this.caches = this.loadCaches(RESOURCES_DIR + CACHES_FILE_NAME);
@@ -340,25 +359,25 @@ class Map {
 		let errorTileUrl = MAP_ERROR;
 		let layer =
 			L.tileLayer(urlTemplate, {
-					minZoom: 6,
-					maxZoom: 19,
-					errorTileUrl: errorTileUrl,
-					id: spec,
-					tileSize: 512,
-					zoomOffset: -1,
-					attribution: attr
+				minZoom: 6,
+				maxZoom: 19,
+				errorTileUrl: errorTileUrl,
+				id: spec,
+				tileSize: 512,
+				zoomOffset: -1,
+				attribution: attr
 			});
 		return layer;
 	}
 
 	addBaseLayers(specs) {
 		let baseMaps = [];
-		for(let i in specs)
+		for (let i in specs)
 			baseMaps[capitalize(specs[i])] =
 				this.makeMapLayer(specs[i], "mapbox/" + specs[i]);
 		baseMaps[capitalize(specs[0])].addTo(this.lmap);
-		L.control.scale({maxWidth: 150, metric: true, imperial: false})
-									.setPosition("topleft").addTo(this.lmap);
+		L.control.scale({ maxWidth: 150, metric: true, imperial: false })
+			.setPosition("topleft").addTo(this.lmap);
 		L.control.layers(baseMaps, {}).setPosition("topleft").addTo(this.lmap);
 		return baseMaps;
 	}
@@ -374,7 +393,7 @@ class Map {
 			shadowAnchor: [8, 8],
 			popupAnchor: [0, -6] // offset the determines where the popup should open
 		};
-		for(let i = 0 ; i < CACHE_KINDS.length ; i++) {
+		for (let i = 0; i < CACHE_KINDS.length; i++) {
 			iconOptions.iconUrl = dir + CACHE_KINDS[i] + ".png";
 			iconOptions.shadowUrl = dir + "Alive.png";
 			icons[CACHE_KINDS[i]] = L.icon(iconOptions);
@@ -386,16 +405,16 @@ class Map {
 
 	loadCaches(filename) {
 		let xmlDoc = loadXMLDoc(filename);
-		let xs = getAllValuesByTagName(xmlDoc, "cache"); 
+		let xs = getAllValuesByTagName(xmlDoc, "cache");
 		let caches = [];
-		if(xs.length === 0)
+		if (xs.length === 0)
 			alert("Empty cache file");
 		else {
-			for(let i = 0 ; i < xs.length ; i++)  // Ignore the disabled caches
-				if( getFirstValueByTagName(xs[i], "status") === STATUS_ENABLED ){
+			for (let i = 0; i < xs.length; i++)  // Ignore the disabled caches
+				if (getFirstValueByTagName(xs[i], "status") === STATUS_ENABLED) {
 					let ca = new Cache(xs[i]);
 					caches.push(ca);
-					if(ca.kind == 'Traditional')
+					if (ca.kind == 'Traditional')
 						ca.installCircle(CACHE_RADIUS, 'red');
 				}
 		}
@@ -440,11 +459,11 @@ class Map {
 		})
 
 		if (minimumDistance < CACHE_RADIUS) {
-			return {error: `Cache is too close: ${minimumDistance.toFixed(1)}m to nearest cache, minimum is ${CACHE_RADIUS}m`}
+			return { error: `Cache is too close: ${minimumDistance.toFixed(1)}m to nearest cache, minimum is ${CACHE_RADIUS}m` }
 		}
 
 		if (minimumDistance > MAX_CACHE_DISTANCE) {
-			return {error: `Cache is too far: ${minimumDistance.toFixed(1)}m to nearest cache, maximum is ${MAX_CACHE_DISTANCE}m`}
+			return { error: `Cache is too far: ${minimumDistance.toFixed(1)}m to nearest cache, maximum is ${MAX_CACHE_DISTANCE}m` }
 		}
 
 		return true;
@@ -457,9 +476,9 @@ class Map {
 
 	getCacheByCode(code) {
 		for (const cache of this.caches) {
-			if(cache.code == code){
+			if (cache.code == code) {
 				return cache;
-			}	
+			}
 		}
 		return null;
 	}
@@ -478,6 +497,37 @@ class Map {
 
 		this.updateStatistics();
 	}
+
+	newRandomCache() {
+		let pos = this.generateValidCoordinates();
+
+		const newCache = new AddedCache(pos.lat, pos.lng);
+		map.addCache(newCache);
+		newCache.installCircle(CACHE_RADIUS, 'blue');
+	}
+
+	generateValidCoordinates() {
+		let valid = false;
+
+		let lat, lng;
+
+		while (!valid) {
+			let index = Math.floor(Math.random() * this.caches.length);
+			let oldCache = this.caches[index];
+			let rad = Math.random();
+			
+			lat = (parseFloat(oldCache.latitude) + ((Math.sin(rad)) * 0.004));
+			lng = (parseFloat(oldCache.longitude) + ((Math.cos(rad)) * 0.004));
+
+			valid = this.validateLocation(lat, lng) === true;
+		}
+	
+		return { lat, lng };
+	}
+
+	generateNewCacheId() {
+		return this.addedCacheCounter++;
+	}
 }
 
 class Statistics {
@@ -494,7 +544,7 @@ class Statistics {
 		for (const pair of Object.entries(cachesByKind)) {
 			const kind = pair[0];
 			const amount = pair[1];
-			
+
 			try {//TODO
 				let line = statisticsElement.querySelector(`#shapeByKind:${kind}`);
 
@@ -504,7 +554,7 @@ class Statistics {
 				line.innerHTML = `<p id="shapeByKind:${kind}" style="padding-left: 12px; margin: 0;">${kind}: <span >${amount}</span></p>`;
 				statisticsElement.appendChild(line);
 			}
-			
+
 		}
 
 	}
@@ -535,8 +585,7 @@ class Statistics {
    this program must be written using the object-oriented style.
 */
 
-function onLoad()
-{
+function onLoad() {
 	map = new Map(MAP_INITIAL_CENTRE, MAP_INITIAL_ZOOM);
 	map.showFCT();
 	map.populate();
@@ -562,27 +611,7 @@ function deleteCache(code) {
 }
 
 function newRandomCache() {
-	min = Math.ceil(0);
-  	max = Math.floor(map.caches.length++);
-  	oldCache = map.caches[Math.floor(Math.random() * (max - min) + min)];
-	oldCache.installCircle(CACHE_RADIUS, 'orange');
-
-	let pos;
-	do{
-		pos = generateCoordinates();
-	}while(map.validateLocation(pos.lat, pos.lng) != true);
-
-	const newCache = new AddedCache(pos.lat, pos.lng);
-	map.addCache(newCache);
-	newCache.installCircle(CACHE_RADIUS, 'blue');
+	map.newRandomCache();
 }
 
-function generateCoordinates()
-{
-	rad = (Math.random() * (1 - -1) + -1).toFixed(4);
 
- 	const lat = (parseFloat(oldCache.latitude) + ((Math.sin(rad)) * 0.004)).toFixed(8);
-	const lng = (parseFloat(oldCache.longitude) + ((Math.cos(rad)) * 0.004)).toFixed(8);
-
-	return {lat, lng};
-}
