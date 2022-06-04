@@ -42,7 +42,7 @@ const MAP_URL =
 const MAP_ERROR =
 	"https://upload.wikimedia.org/wikipedia/commons/e/e0/SNice.svg";
 const MAP_LAYERS =
-	["streets-v11", "outdoors-v11", "light-v10", "dark-v10", "satellite-v9",
+	["dark-v10", "streets-v11", "outdoors-v11", "light-v10",  "satellite-v9",
 		"satellite-streets-v11", "navigation-day-v1", "navigation-night-v1"]
 //const RESOURCES_DIR =
 //	"http//ctp.di.fct.unl.pt/lei/lap/projs/proj2122-3/resources/";
@@ -309,7 +309,19 @@ class Cache extends POI {
 	}
 
 	removeCircle() {
-		this.circle.remove();
+		if (this.circle) {
+			this.circle.remove();
+		}
+	}
+
+	hide() {
+		this.removeMarker();
+		this.removeCircle();
+	}
+
+	show() {
+		this.installMarker();
+		this.installCircle();
 	}
 }
 
@@ -602,6 +614,11 @@ class Map {
 	generateNewCacheId() {
 		return this.addedCacheCounter++;
 	}
+
+	showCachesOfKind(toggle, kind) {
+		this.caches.filter(cache => cache.kind == kind)
+			.forEach(cache => toggle ? cache.show() : cache.hide())
+	}
 }
 
 class Statistics {
@@ -612,23 +629,17 @@ class Statistics {
 	updatePresentationLayer() {
 		let statisticsElement = document.querySelector('#statistics'); //querying for the element with id="statistics"
 
-		// Cache by kind statistics:
+		// Cache by kind:
 		const cachesByKind = this.getNumberOfCachesOfEachKind();
 
-		for (const pair of Object.entries(cachesByKind)) {
-			const kind = pair[0];
-			const amount = pair[1];
+		for (const kind of Object.keys(cachesByKind)) {
+			let amountElement = document.getElementById(kind+"-amount");
 
-			try {//TODO
-				let line = statisticsElement.querySelector(`#shapeByKind:${kind}`);
 
-				line.querySelector('span').innerHTML = amount;
-			} catch (error) {
-				let line = document.createElement('p');
-				line.innerHTML = `<p id="shapeByKind:${kind}" style="padding-left: 12px; margin: 0;">${kind}: <span >${amount}</span></p>`;
-				statisticsElement.appendChild(line);
+			if (amountElement) {
+				amountElement.innerText = ` [${cachesByKind[kind]}]`;
 			}
-
+			
 		}
 
 	}
@@ -660,6 +671,31 @@ class Statistics {
 */
 
 function onLoad() {
+	let cacheKindsElement = document.getElementById('cache-kinds');
+
+	for (const kind of CACHE_KINDS) {
+		let line = document.createElement('p');
+		let checkbox = document.createElement('input');
+		checkbox.type = 'checkbox';
+		checkbox.checked = true;
+		checkbox.addEventListener('change', (e) => {
+			console.log(e.target.checked, kind)
+			map.showCachesOfKind(e.target.checked, kind)
+		})
+		let icon = document.createElement('img');
+		let name = document.createElement('span');
+		let amount = document.createElement('span');
+		amount.id = kind+"-amount"
+
+		icon.src = RESOURCES_DIR + kind + ".png";
+		name.innerText = kind;
+		line.appendChild(checkbox);
+		line.appendChild(icon);
+		line.appendChild(name);
+		line.appendChild(amount);
+		cacheKindsElement.appendChild(line);
+	}
+
 	map = new Map(MAP_INITIAL_CENTRE, MAP_INITIAL_ZOOM);
 	map.showFCT();
 	map.populate();
