@@ -122,7 +122,7 @@ function generateCSS(style) {
 	for (const property of Object.keys(style)) {
 		result += `${property}: ${style[property]}; `;
 	}
-	return result+='"';
+	return result += '"';
 }
 
 
@@ -131,6 +131,7 @@ function generateCSS(style) {
 class POI {
 	constructor(xml) {
 		this.decodeXML(xml);
+
 	}
 
 	decodeXML(xml) {
@@ -141,19 +142,24 @@ class POI {
 		this.longitude = getFirstValueByTagName(xml, "longitude");
 	}
 
-	installCircle(radius, color) {
-		let pos = [this.latitude, this.longitude];
-		let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
-		this.circle = L.circle(pos, radius, style);
-		this.circle.bindTooltip(this.name);
-		map.add(this.circle);
-	}
+	
 }
 
 class Cache extends POI {
 	constructor(xml) {
 		super(xml);
 		this.installMarker();
+		this.installCircle();
+	}
+
+	installCircle(radius = CACHE_RADIUS, color = 'red') {
+		if (this.kind == 'Traditional') {
+			let pos = [this.latitude, this.longitude];
+			let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+			this.circle = L.circle(pos, radius, style);
+			this.circle.bindTooltip(this.name);
+			map.add(this.circle);
+		}
 	}
 
 	decodeXML(xml) {
@@ -185,11 +191,11 @@ class Cache extends POI {
 		this.marker.bindTooltip(this.name);
 
 		const infoButtonStyle = {
-			"font-size":"20px",
-			"background-color":"green",
-			color:"white",
-			border:"none",
-			"border-radius":"8px"
+			"font-size": "20px",
+			"background-color": "green",
+			color: "white",
+			border: "none",
+			"border-radius": "8px"
 		}
 
 		const infoButton = `
@@ -199,37 +205,37 @@ class Cache extends POI {
 		`
 
 		const streetViewButtonStyle = {
-			"font-size":"20px",
-			"background-color":"cornflowerblue",
-			color:"white",
-			border:"none",
-			"border-radius":"8px"
+			"font-size": "20px",
+			"background-color": "cornflowerblue",
+			color: "white",
+			border: "none",
+			"border-radius": "8px"
 		}
 
 		const streetViewButton = `
-					<a href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
+					<a id="sv-btn-${this.code}" href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
 						<button style=${generateCSS(streetViewButtonStyle)}>Street View</button>
   					 </a>
 		`
 
-		const basePopup = `<h2>I'm the marker of the cache ${this.name}</h2>` + infoButton + streetViewButton;
+		const basePopup = `<h2>I'm the marker of the cache ${this.name}</h2>` + streetViewButton;
 
 		const changeLocationButtonStyle = {
-			"font-size":"20px",
-			"background-color":"orange",
-			color:"white",
-			border:"none",
-			"border-radius":"8px"
+			"font-size": "20px",
+			"background-color": "orange",
+			color: "white",
+			border: "none",
+			"border-radius": "8px"
 		}
 
 		const changeLocationButton = `<p><button onClick="changeCacheLocation('${this.code}')" style=${generateCSS(changeLocationButtonStyle)}>Change Location</button></p>`
 
 		const deleteButtonStyle = {
-			"font-size":"20px",
-			"background-color":"red",
-			color:"white",
-			border:"none",
-			"border-radius":"8px"
+			"font-size": "20px",
+			"background-color": "red",
+			color: "white",
+			border: "none",
+			"border-radius": "8px"
 		}
 
 		const deleteButton = `<button onClick="deleteCache('${this.code}')" style=${generateCSS(deleteButtonStyle)}>Delete</button>`
@@ -238,9 +244,9 @@ class Cache extends POI {
 			case "Multi":
 			case "Mystery":
 			case "Letterbox":
-				this.marker.bindPopup(basePopup + changeLocationButton); break;
+				this.marker.bindPopup(basePopup + infoButton + changeLocationButton); break;
 			default:
-				this.marker.bindPopup(basePopup); break;
+				this.marker.bindPopup(basePopup + infoButton); break;
 
 		}
 		//To add the function excluse to added caches
@@ -281,14 +287,19 @@ class Cache extends POI {
 		this.disableDragging();
 		const { lat, lng } = this.marker.getLatLng(); //new location
 
-		const locationValidity = map.validateLocation(lat, lng);
+		const locationValidity = map.validateLocation({ lat, lng }, this);
 
 		if (locationValidity === true) {
 			this.latitude = lat;
 			this.longitude = lng;
+			this.removeMarker(); 
+			this.installMarker();
 			alert(`Location of ${this.name} changed to ${lat}, ${lng}`)
 		} else {
 			this.marker.setLatLng({ lat: this.latitude, lng: this.longitude }); //revert marker location
+			if (this.circle) {
+				this.circle.setLatLng({ lat: this.latitude, lng: this.longitude }) //revert circle location
+			}
 			alert(locationValidity.error);
 		}
 	}
@@ -308,7 +319,7 @@ class AddedCache extends Cache {
 		let txt =
 			`<cache>
             <code>NGC${id}</code>
-            <name>UNKNOWN</name>
+            <name>New Cache ${id}</name>
             <owner>UNKNOWN</owner>
             <latitude>${lat}</latitude>
             <longitude>${lng}</longitude>
@@ -329,6 +340,28 @@ class AddedCache extends Cache {
 		let xml = txt2xml(txt);
 		super(xml)
 	}
+
+	installCircle(radius = CACHE_RADIUS, color = 'green') {
+			let pos = [this.latitude, this.longitude];
+			let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+			this.circle = L.circle(pos, radius, style);
+			this.circle.bindTooltip(this.name);
+			map.add(this.circle);
+	}
+}
+
+class AutoAddedCache extends AddedCache {
+	constructor(lat, lng) {
+		super(lat, lng)
+	}
+
+	installCircle(radius = CACHE_RADIUS, color = 'blue') {
+		let pos = [this.latitude, this.longitude];
+		let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+		this.circle = L.circle(pos, radius, style);
+		this.circle.bindTooltip(this.name);
+		map.add(this.circle);
+}
 }
 
 class Place extends POI {
@@ -337,7 +370,15 @@ class Place extends POI {
 		this.name = name;
 		this.latitude = pos[0];
 		this.longitude = pos[1];
-		this.installCircle(CACHE_RADIUS, 'black');
+		this.installCircle();
+	}
+
+	installCircle(radius = CACHE_RADIUS, color = 'black') {
+			let pos = [this.latitude, this.longitude];
+			let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+			this.circle = L.circle(pos, radius, style);
+			this.circle.bindTooltip(this.name);
+			map.add(this.circle);
 	}
 }
 
@@ -446,8 +487,7 @@ class Map {
 				if (getFirstValueByTagName(xs[i], "status") === STATUS_ENABLED) {
 					let ca = new Cache(xs[i]);
 					caches.push(ca);
-					if (ca.kind == 'Traditional')
-						ca.installCircle(CACHE_RADIUS, 'red');
+					
 				}
 		}
 		return caches;
@@ -480,13 +520,16 @@ class Map {
 		return this.lmap.on('click', handler2);
 	}
 
-	validateLocation(lat, lng) {
+	validateLocation(pos, ignore) {
+		let {lat, lng} = pos;
 		let minimumDistance = Number.POSITIVE_INFINITY;
 
 		this.caches.forEach(cache => {
-			const distance = haversine(cache.latitude, cache.longitude, lat, lng) * 1000;//km to m
-			if (distance < minimumDistance) {
-				minimumDistance = distance;
+			if (cache != ignore) {
+				const distance = haversine(cache.latitude, cache.longitude, lat, lng) * 1000;//km to m
+				if (distance < minimumDistance) {
+					minimumDistance = distance;
+				}
 			}
 		})
 
@@ -533,9 +576,8 @@ class Map {
 	newRandomCache() {
 		let pos = this.generateValidCoordinates();
 
-		const newCache = new AddedCache(pos.lat, pos.lng);
+		const newCache = new AutoAddedCache(pos.lat, pos.lng);
 		map.addCache(newCache);
-		newCache.installCircle(CACHE_RADIUS, 'blue');
 	}
 
 	generateValidCoordinates() {
@@ -547,13 +589,13 @@ class Map {
 			let index = Math.floor(Math.random() * this.caches.length);
 			let oldCache = this.caches[index];
 			let rad = Math.random();
-			
+
 			lat = (parseFloat(oldCache.latitude) + ((Math.sin(rad)) * 0.004));
 			lng = (parseFloat(oldCache.longitude) + ((Math.cos(rad)) * 0.004));
 
-			valid = this.validateLocation(lat, lng) === true;
+			valid = this.validateLocation({ lat, lng }) === true;
 		}
-	
+
 		return { lat, lng };
 	}
 
@@ -624,13 +666,12 @@ function onLoad() {
 }
 
 function addCache(lat, lng) {
-	const locationValidity = map.validateLocation(lat, lng);
+	const locationValidity = map.validateLocation({ lat, lng });
 	if (locationValidity.error) {
 		alert(locationValidity.error)
 	} else {
 		const newCache = new AddedCache(lat, lng);
 		map.addCache(newCache);
-		newCache.installCircle(CACHE_RADIUS, 'green');
 	}
 }
 
