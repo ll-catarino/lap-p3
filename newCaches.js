@@ -187,6 +187,14 @@ class Cache extends POI {
 		}
 		map.add(this.marker);
 	}
+
+	enableDragging() {
+		this.marker.dragging.enable();
+	}
+	
+	disableDragging() {
+		this.marker.dragging.disable();
+	}
 }
 
 
@@ -431,6 +439,10 @@ class Statistics {
 			}
 		})
 		return result;
+	}
+
+	getCacheWithHighestAltitude() {
+		return this.caches.reduce()
 	}
 
 }
