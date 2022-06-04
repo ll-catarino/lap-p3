@@ -174,26 +174,29 @@ class Cache extends POI {
 		this.marker = L.marker(pos, {icon: map.getIcon(this.kind)});
 		this.marker.bindTooltip(this.name);
 
+		const basePopup = `
+					<h4>I'm the marker of the cache ${this.name}</h4>
+					<a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
+    					<button>Info</button>
+  					</a></p>
+		`
+
+		const changeLocationButton = `<p><button onClick="changeCacheLocation('${this.code}')">Change Location</button>`
+
+		const deleteButton = `<button onClick="deleteCache('${this.code}')">Delete</button>`
 		//Button function TBD
 		switch(this.kind) {
 			case "Multi":
 			case "Mystery":
 			case "Letterbox": 
-				this.marker.bindPopup(`I'm the marker of the cache ${this.name}.
-									  <p><button onClick="changeCacheLocation('${this.code}')">Change Location</button>
-									  <a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
-    								  <button>Info</button>
-  									  </a></p>`); break;
+				this.marker.bindPopup(basePopup + changeLocationButton); break;
 			default:	
-				this.marker.bindPopup(`I'm the marker of the cache ${this.name}.
-									  <p><a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
-									  <button>Info</button>
-				  					  </a></p>`); break;
+				this.marker.bindPopup(basePopup); break;
 		
 		}
 		//To add the function excluse to added caches
 		if(this.constructor.name == 'AddedCache'){
-			this.marker.bindPopup(`${this.marker.getPopup().getContent()}<button>Change Location</button><button>Delete</button>`)
+			this.marker.bindPopup( basePopup + changeLocationButton + deleteButton)
 		}
 
 		map.add(this.marker);
@@ -228,6 +231,14 @@ class Cache extends POI {
 			this.marker.setLatLng({lat: this.latitude, lng: this.longitude}); //revert marker location
 			alert(locationValidity.error);
 		}
+	}
+
+	removeMarker() {
+		this.marker.remove();
+	}
+
+	removeCircle() {
+		this.circle.remove();
 	}
 }
 
@@ -446,6 +457,16 @@ class Map {
 	changeCacheLocation(code) {
 		this.getCacheByCode(code).changeLocation();
 	}
+
+	deleteCache(code) {
+		const cache = this.getCacheByCode(code);
+		cache.removeMarker();
+		cache.removeCircle();
+		const index = this.caches.indexOf(cache);
+		this.caches.splice(index, 1);
+
+		this.updateStatistics();
+	}
 }
 
 class Statistics {
@@ -523,5 +544,9 @@ function addCache(lat, lng) {
 
 function changeCacheLocation(code) {
 	map.changeCacheLocation(code);
+}
+
+function deleteCache(code) {
+	map.deleteCache(code);
 }
 
