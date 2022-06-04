@@ -172,6 +172,7 @@ class Cache extends POI {
 	installMarker() {
 		let pos = [this.latitude, this.longitude];
 		this.marker = L.marker(pos, {icon: map.getIcon(this.kind)});
+		let mark = this.marker;
 		this.marker.bindTooltip(this.name);
 
 		//Button function TBD
@@ -180,9 +181,15 @@ class Cache extends POI {
 			case "Mystery":
 			case "Letterbox": 
 				this.marker.bindPopup(`I'm the marker of the cache ${this.name}.
-									  <p><button onClick="">Register Location</button></p>`); break;
+									  <p><button onClick="changeCacheLocation(${this.code}, 38.658705, -9.228687)">Change Location</button>
+									  <a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
+    								  <button>Info</button>
+  									  </a></p>`); break;
 			default:	
-				this.marker.bindPopup("I'm the marker of the cache <b>" + this.name + "</b>."); break;
+				this.marker.bindPopup(`I'm the marker of the cache ${this.name}.
+									  <p><a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
+									  <button>Info</button>
+				  					  </a></p>`); break;
 		
 		}
 		map.add(this.marker);
@@ -347,6 +354,7 @@ class Map {
 		return caches;
 	}
 
+
 	/**
 	 * Adds cache to the map
 	 * @param {Cache} cache chache to be added
@@ -397,6 +405,16 @@ class Map {
 	updateStatistics() {
 		let statistics = new Statistics(this.caches);
 		statistics.updatePresentationLayer();
+	}
+
+
+	changeCacheLocation(code, lat, lng) {
+		this.caches.forEach(function (e) {
+			if(e.code == code){
+				e.latitude = lat;
+				e.longitude = lng;
+			}
+		})
 	}
 }
 
@@ -471,5 +489,9 @@ function addCache(lat, lng) {
 		map.addCache(newCache);
 		newCache.installCircle(CACHE_RADIUS, 'green');
 	}
+}
+
+function changeCacheLocation(code, lat, lng) {
+	map.changeCacheLocation(code, lat, lng);
 }
 
