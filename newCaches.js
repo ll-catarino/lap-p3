@@ -1,15 +1,19 @@
 /*     New Caches
 
-Aluno 1: 55100 Lourenco Catarino <-- mandatory to fill
-Aluno 2: ?number ?name <-- mandatory to fill
+Aluno 1: 55100 Lourenco Catarino
+Aluno 2: 60774 Goncalo Gomes
 
 Comment:
 
-The file "newCaches.js" must include, in the first lines,
-an opening comment containing: the name and number of the two students who
-developd the project; indication of which parts of the work
-made and which were not made; possibly alerts to some aspects of the
-implementation that may be less obvious to the teacher.
+Implemented features:
+1. all features implemented
+2. all features implemented
+3. all features implemented
+4. partially implemented
+5. implemented
+6. not implemented
+
+
 
 
 
@@ -188,19 +192,47 @@ class Cache extends POI {
 			"border-radius":"8px"
 		}
 
-		const basePopup = `
-					<h4>I'm the marker of the cache ${this.name}</h4>
+		const infoButton = `
 					<a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
-    					<button style=${generateCSS(infoButtonStyle)}>Info</button>
-  					</a>
-					<a href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
-					 	<button>Street View</button>
-					</a>
+						<button style=${generateCSS(infoButtonStyle)}>Info</button>
+	  				</a>
 		`
 
-		const changeLocationButton = `<p><button onClick="changeCacheLocation('${this.code}')">Change Location</button></p>`
+		const streetViewButtonStyle = {
+			"font-size":"20px",
+			"background-color":"cornflowerblue",
+			color:"white",
+			border:"none",
+			"border-radius":"8px"
+		}
 
-		const deleteButton = `<button onClick="deleteCache('${this.code}')">Delete</button>`
+		const streetViewButton = `
+					<a href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
+						<button style=${generateCSS(streetViewButtonStyle)}>Street View</button>
+  					 </a>
+		`
+
+		const basePopup = `<h2>I'm the marker of the cache ${this.name}</h2>` + infoButton + streetViewButton;
+
+		const changeLocationButtonStyle = {
+			"font-size":"20px",
+			"background-color":"orange",
+			color:"white",
+			border:"none",
+			"border-radius":"8px"
+		}
+
+		const changeLocationButton = `<p><button onClick="changeCacheLocation('${this.code}')" style=${generateCSS(changeLocationButtonStyle)}>Change Location</button></p>`
+
+		const deleteButtonStyle = {
+			"font-size":"20px",
+			"background-color":"red",
+			color:"white",
+			border:"none",
+			"border-radius":"8px"
+		}
+
+		const deleteButton = `<button onClick="deleteCache('${this.code}')" style=${generateCSS(deleteButtonStyle)}>Delete</button>`
 		//Button function TBD
 		switch (this.kind) {
 			case "Multi":
