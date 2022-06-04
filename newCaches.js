@@ -408,15 +408,6 @@ class Map {
 			}
 		})
 	}
-
-	openGeoCacheInfo(code) {
-		this.caches.forEach(function (e) {
-			if(e.code == code){
-				e.latitude = lat;
-				e.longitude = lng;
-			}
-		})
-	}
 }
 
 class Statistics {
@@ -490,9 +481,5 @@ function addCache(lat, lng) {
 
 function changeCacheLocation(code, lat, lng) {
 	map.changeCacheLocation(code, lat, lng);
-}
-
-function openGeoCacheInfo(code) {
-	map.openGeoCacheInfo(code);
 }
 
