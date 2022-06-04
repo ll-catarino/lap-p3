@@ -561,3 +561,28 @@ function deleteCache(code) {
 	map.deleteCache(code);
 }
 
+function newRandomCache() {
+	min = Math.ceil(0);
+  	max = Math.floor(map.caches.length++);
+  	oldCache = map.caches[Math.floor(Math.random() * (max - min) + min)];
+	oldCache.installCircle(CACHE_RADIUS, 'orange');
+
+	let pos;
+	do{
+		pos = generateCoordinates();
+	}while(map.validateLocation(pos.lat, pos.lng) != true);
+
+	const newCache = new AddedCache(pos.lat, pos.lng);
+	map.addCache(newCache);
+	newCache.installCircle(CACHE_RADIUS, 'blue');
+}
+
+function generateCoordinates()
+{
+	rad = (Math.random() * (1 - -1) + -1).toFixed(4);
+
+ 	const lat = (parseFloat(oldCache.latitude) + ((Math.sin(rad)) * 0.004)).toFixed(8);
+	const lng = (parseFloat(oldCache.longitude) + ((Math.cos(rad)) * 0.004)).toFixed(8);
+
+	return {lat, lng};
+}
