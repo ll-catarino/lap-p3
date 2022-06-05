@@ -415,6 +415,16 @@ class Map {
 			if (distance < minimumDistance) {
 				minimumDistance = distance;
 			}
+			if (cache != ignore) {
+				const distance = haversine(cache.latitude, cache.longitude, lat, lng) * 1000;//km to m
+				if (distance < minimumDistanceToCache) {
+					minimumDistanceToCache = distance;
+				}
+
+				if (cache instanceof OriginalCache && cache.kind == 'Traditional' && distance < minimumDistanceToOriginalCache) {
+					minimumDistanceToOriginalCache = distance;
+				}
+			}
 		})
 
 		if (minimumDistance < CACHE_RADIUS) {
@@ -445,6 +455,89 @@ class Map {
 
 	changeCacheLocation(code) {
 		this.getCacheByCode(code).changeLocation();
+	}
+
+	deleteCache(code) {
+		const cache = this.getCacheByCode(code);
+		cache.removeMarker();
+		cache.removeCircle();
+		const index = this.caches.indexOf(cache);
+		this.caches.splice(index, 1);
+
+		this.updateStatistics();
+	}
+
+	newRandomCache() {
+		let index = Math.floor(Math.random() * this.caches.length);
+		let oldCache = this.caches[index];
+
+		try{
+		let pos = this.generateValidCoordinates(oldCache, 1000);
+
+		const newCache = new AutoAddedCache(pos.lat, pos.lng);
+		map.addCache(newCache);
+		}catch(e){
+			alert('Location not found')
+		}
+	}
+	
+	manyNewRandomCaches() {
+		let total = 0;
+		for(let i = 0; i < 2; i++)
+			total += this.generationPass();
+
+		alert(`${total} caches created`);
+	}
+
+	generationPass() {
+		let total = 0;
+		for(let i = 0; i < this.caches.length; i++){
+			let j = 0;
+			try{
+				while(j < 10){
+				let pos = this.generateValidCoordinates(this.caches[i], 10);
+
+				const newCache = new AutoAddedCache(pos.lat, pos.lng);
+				map.addCache(newCache);
+				j++; 
+				total++;
+				}
+			}catch(e){
+				j++;
+			}
+		}
+		return total;
+	}
+
+	generateValidCoordinates(oldCache, delay) {
+		var start = Date.now();
+		let valid = false;
+		let lat, lng;
+
+		while (!valid && ((Date.now() - start) < delay)) {
+			let rad = (Math.random() * (Math.PI * 2));
+			let dist = 0.004 * (Math.random() + 1);
+
+			lat = (parseFloat(oldCache.latitude) + ((Math.sin(rad)) * dist));
+			lng = (parseFloat(oldCache.longitude) + ((Math.cos(rad)) * dist));
+
+			valid = this.validateLocation({ lat, lng }) === true;
+		}
+
+		if(!valid){
+			throw new Error('');
+		}
+		return { lat, lng };
+	}
+
+
+	generateNewCacheId() {
+		return this.addedCacheCounter++;
+	}
+
+	showCachesOfKind(toggle, kind) {
+		this.caches.filter(cache => cache.kind == kind)
+			.forEach(cache => toggle ? cache.show() : cache.hide())
 	}
 }
 
@@ -544,6 +637,10 @@ function newRandomCache() {
 function generateCoordinates()
 {
 	rad = (Math.random() * (1 - -1) + -1).toFixed(4);
+function manyNewRandomCaches() {
+	map.manyNewRandomCaches();
+}
+
 
  	const lat = (parseFloat(oldCache.latitude) + ((Math.sin(rad)) * 0.004)).toFixed(8);
 	const lng = (parseFloat(oldCache.longitude) + ((Math.cos(rad)) * 0.004)).toFixed(8);
