@@ -607,13 +607,14 @@ class Map {
 	}
 
 	newRandomCache() {
-		let pos = this.generateValidCoordinates();
+		let pos = this.generateRandomValidCoordinates();
 
 		const newCache = new AutoAddedCache(pos.lat, pos.lng);
 		map.addCache(newCache);
 	}
 
-	generateValidCoordinates() {
+
+	generateRandomValidCoordinates() {
 		let valid = false;
 
 		let lat, lng;
@@ -631,6 +632,14 @@ class Map {
 
 		return { lat, lng };
 	}
+
+	manyNewRandomCaches() {
+		let positions = [];
+
+		positions.forEach(p => map.addCache(new AutoAddedCache(p.lat, p.lng)));
+	}
+
+
 
 	generateNewCacheId() {
 		return this.addedCacheCounter++;
@@ -742,6 +751,10 @@ function deleteCache(code) {
 
 function newRandomCache() {
 	map.newRandomCache();
+}
+
+function manyNewRandomCaches() {
+	map.manyNewRandomCaches();
 }
 
 
