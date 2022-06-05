@@ -326,7 +326,7 @@ class AddedCache extends Cache {
 			`<cache>
             <code>NGC${id}</code>
             <name>New Cache ${id}</name>
-            <owner>UNKNOWN</owner>
+            <owner>utilizador</owner>
             <latitude>${lat}</latitude>
             <longitude>${lng}</longitude>
             <altitude>-32768</altitude>
@@ -556,13 +556,13 @@ class Map {
 		let minimumDistanceToOriginalCache = Number.POSITIVE_INFINITY;
 
 		this.caches.forEach(cache => {
-			if (cache != ignore) {
+				if (cache != ignore) {
 				const distance = haversine(cache.latitude, cache.longitude, lat, lng) * 1000;//km to m
 				if (distance < minimumDistanceToCache) {
 					minimumDistanceToCache = distance;
 				}
 
-				if (cache instanceof OriginalCache && distance < minimumDistanceToOriginalCache) {
+				if (cache instanceof OriginalCache && cache.kind == 'Traditional' && distance < minimumDistanceToOriginalCache) {
 					minimumDistanceToOriginalCache = distance;
 				}
 			}
@@ -609,39 +609,67 @@ class Map {
 	}
 
 	newRandomCache() {
-		let pos = this.generateRandomValidCoordinates();
+		let index = Math.floor(Math.random() * this.caches.length);
+		let oldCache = this.caches[index];
+
+		try{
+		let pos = this.generateValidCoordinates(oldCache, 1000);
 
 		const newCache = new AutoAddedCache(pos.lat, pos.lng);
 		map.addCache(newCache);
+		}catch(e){
+			alert(e.message)
+		}
+	}
+	
+	manyNewRandomCaches() {
+		let total = 0;
+		for(let i = 0; i < 2; i++)
+			total += this.generationPass();
+
+		alert(`${total} caches created`);
 	}
 
+	generationPass() {
+		let total = 0;
+		for(let i = 0; i < this.caches.length; i++){
+			let j = 0;
+			try{
+				while(j < 10){
+				let pos = this.generateValidCoordinates(this.caches[i], 10);
 
-	generateRandomValidCoordinates() {
+				const newCache = new AutoAddedCache(pos.lat, pos.lng);
+				map.addCache(newCache);
+				j++; 
+				total++;
+				}
+			}catch(e){
+				j++;
+			}
+		}
+		return total;
+	}
+
+	generateValidCoordinates(oldCache, delay) {
+		var start = Date.now();
 		let valid = false;
-
 		let lat, lng;
 
-		while (!valid) {
-			let index = Math.floor(Math.random() * this.caches.length);
-			let oldCache = this.caches[index];
-			let rad = Math.random();
+		while (!valid && ((Date.now() - start) < delay)) {
+			let rad = (Math.random() * (Math.PI * 2));
+			let dist = 0.004 * (Math.random() + 1);
 
-			lat = (parseFloat(oldCache.latitude) + ((Math.sin(rad)) * 0.004));
-			lng = (parseFloat(oldCache.longitude) + ((Math.cos(rad)) * 0.004));
+			lat = (parseFloat(oldCache.latitude) + ((Math.sin(rad)) * dist));
+			lng = (parseFloat(oldCache.longitude) + ((Math.cos(rad)) * dist));
 
 			valid = this.validateLocation({ lat, lng }) === true;
 		}
 
+		if(!valid){
+			throw new Error('Location not found');
+		}
 		return { lat, lng };
 	}
-
-	manyNewRandomCaches() {
-		let positions = [];
-
-		positions.forEach(p => map.addCache(new AutoAddedCache(p.lat, p.lng)));
-	}
-
-
 
 	generateNewCacheId() {
 		return this.addedCacheCounter++;
@@ -676,10 +704,10 @@ class Statistics {
 		let statisticsDiv = document.querySelector('#statistics'); //querying for the element with id="statistics"
 
 
-		let ownerElem;
-		if (!document.getElementById('staistic-max-alt')) {
+		let ownerElem = document.getElementById('statistic-max-owner');
+		if (ownerElem == null) {
 			ownerElem = document.createElement('p');
-			ownerElem.id = 'statistic-max-alt';
+			ownerElem.id = 'statistic-max-owner';
 		}
 		let prolificOwner = this.getMostProlificOwner();
 
@@ -688,8 +716,8 @@ class Statistics {
 		statisticsDiv.appendChild(ownerElem);
 		
 
-		let highestElem;
-		if (!document.getElementById('staistic-max-alt')) {
+		let highestElem = document.getElementById('statistic-max-alt');
+		if (highestElem == null) {
 			highestElem = document.createElement('p');
 			highestElem.id = 'statistic-max-alt';
 		}
@@ -699,10 +727,10 @@ class Statistics {
 
 		statisticsDiv.appendChild(highestElem);
 
-		let lowestElem;
-		if (!document.getElementById('staistic-max-alt')) {
+		let lowestElem = document.getElementById('statistic-min-alt');
+		if (lowestElem == null) {
 			lowestElem = document.createElement('p');
-			lowestElem.id = 'statistic-max-alt';
+			lowestElem.id = 'statistic-min-alt';
 		}
 		let lowestCache = this.getCacheWithLowestAltitude();
 
@@ -739,7 +767,7 @@ class Statistics {
 	}
 
 	getMostProlificOwner() {
-		let cachesByName = this.caches.filter(c => c.owner != "UNKNOWN" )
+		let cachesByName = this.caches
 			.reduce((cachesByName, currentCache) => {
 			let name = currentCache.owner;
 			if (name in cachesByName) {
