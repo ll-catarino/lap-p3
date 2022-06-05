@@ -92,10 +92,30 @@ Artur Miguel Dias, 2022
 			border-radius: 4px;
             padding: 6px;
             margin: 4px;
+            width: 190px;
         }
 
         .background-blue {
             background-color: cornflowerblue;
+        }
+
+        .background-green {
+            background-color: mediumseagreen;
+        }
+
+        .background-orange {
+            background-color: orange;
+        }
+
+        .background-red {
+            background-color: red;
+        }
+
+
+        .popup {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         input {
@@ -123,8 +143,7 @@ Artur Miguel Dias, 2022
 
         <hr>
         <button onclick="newRandomCache()" class="background-blue">New Random Cache</button>
-        <button onclick="manyNewRandomCaches()" class="background-blue">Many New Random Cache</button>
-
+        <button onclick="manyNewRandomCaches()" class="background-blue">Many New Random Caches</button>
 
         <HR>
 
@@ -135,12 +154,7 @@ Artur Miguel Dias, 2022
         </div>
 
 
-        <hr>
     </div>
-
-
-
-
 
     <div id="mapid" style="position: fixed; top: 0px; left: 200px; width: 100%; height: 100%;"></div>
 </BODY>

@@ -42,7 +42,7 @@ const MAP_URL =
 const MAP_ERROR =
 	"https://upload.wikimedia.org/wikipedia/commons/e/e0/SNice.svg";
 const MAP_LAYERS =
-	["dark-v10", "streets-v11", "outdoors-v11", "light-v10",  "satellite-v9",
+	["dark-v10", "streets-v11", "outdoors-v11", "light-v10", "satellite-v9",
 		"satellite-streets-v11", "navigation-day-v1", "navigation-night-v1"]
 //const RESOURCES_DIR =
 //	"http//ctp.di.fct.unl.pt/lei/lap/projs/proj2122-3/resources/";
@@ -142,7 +142,7 @@ class POI {
 		this.longitude = getFirstValueByTagName(xml, "longitude");
 	}
 
-	
+
 }
 
 class Cache extends POI {
@@ -190,71 +190,44 @@ class Cache extends POI {
 		this.marker = L.marker(pos, { icon: map.getIcon(this.kind) });
 		this.marker.bindTooltip(this.name);
 
-		const infoButtonStyle = {
-			"font-size": "20px",
-			"background-color": "green",
-			color: "white",
-			border: "none",
-			"border-radius": "8px"
-		}
+		this.marker.bindPopup(this.buildPopup())
 
-		const infoButton = `
-					<a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
-						<button style=${generateCSS(infoButtonStyle)}>Info</button>
-	  				</a>
+		map.add(this.marker);
+
+	}
+
+	buildPopup() {
+
+		let popup = `
+			<div class="popup">
+				<h2>${this.name}</h2>
+
+				<!-- cache page -->
+				<a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
+					<button class="background-green">Info</button>
+	  			</a>
+
+				<!-- google street view -->
+				<a href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
+				 	<button class="background-blue">Street View</button>
+				</a>
+				
+			
 		`
 
-		const streetViewButtonStyle = {
-			"font-size": "20px",
-			"background-color": "cornflowerblue",
-			color: "white",
-			border: "none",
-			"border-radius": "8px"
-		}
-
-		const streetViewButton = `
-					<a id="sv-btn-${this.code}" href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
-						<button style=${generateCSS(streetViewButtonStyle)}>Street View</button>
-  					 </a>
-		`
-
-		const basePopup = `<h2>I'm the marker of the cache ${this.name}</h2>` + streetViewButton;
-
-		const changeLocationButtonStyle = {
-			"font-size": "20px",
-			"background-color": "orange",
-			color: "white",
-			border: "none",
-			"border-radius": "8px"
-		}
-
-		const changeLocationButton = `<p><button onClick="changeCacheLocation('${this.code}')" style=${generateCSS(changeLocationButtonStyle)}>Change Location</button></p>`
-
-		const deleteButtonStyle = {
-			"font-size": "20px",
-			"background-color": "red",
-			color: "white",
-			border: "none",
-			"border-radius": "8px"
-		}
-
-		const deleteButton = `<button onClick="deleteCache('${this.code}')" style=${generateCSS(deleteButtonStyle)}>Delete</button>`
-		//Button function TBD
 		switch (this.kind) {
 			case "Multi":
 			case "Mystery":
 			case "Letterbox":
-				this.marker.bindPopup(basePopup + infoButton + changeLocationButton); break;
-			default:
-				this.marker.bindPopup(basePopup + infoButton); break;
-
-		}
-		//To add the function excluse to added caches
-		if (this.constructor.name == 'AddedCache') {
-			this.marker.bindPopup(basePopup + changeLocationButton + deleteButton)
+				popup+= 
+				`
+				<button onClick="changeCacheLocation('${this.code}')" class="background-orange">Change Location</button>
+				
+				`
 		}
 
-		map.add(this.marker);
+		popup+= '</div>';
+		return popup;
 	}
 
 	enableDragging() {
@@ -292,7 +265,7 @@ class Cache extends POI {
 		if (locationValidity === true) {
 			this.latitude = lat;
 			this.longitude = lng;
-			this.removeMarker(); 
+			this.removeMarker();
 			this.installMarker();
 			alert(`Location of ${this.name} changed to ${lat}, ${lng}`)
 		} else {
@@ -353,12 +326,35 @@ class AddedCache extends Cache {
 		super(xml)
 	}
 
+	buildPopup() {
+
+		let popup = `
+			<div class="popup">
+				<h2>${this.name}</h2>
+
+				<!-- google street view button-->
+				<a href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
+				 	<button class="background-blue">Street View</button>
+				</a>
+
+				<!-- change location button -->
+				<button onClick="changeCacheLocation('${this.code}')" class="background-orange">Change Location</button>
+			
+				<!-- delete cache button -->	
+				<button onClick="deleteCache('${this.code}')" class="background-red">Delete</button>
+				</div>	
+		`
+		return popup;
+
+
+	}
+
 	installCircle(radius = CACHE_RADIUS, color = 'green') {
-			let pos = [this.latitude, this.longitude];
-			let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
-			this.circle = L.circle(pos, radius, style);
-			this.circle.bindTooltip(this.name);
-			map.add(this.circle);
+		let pos = [this.latitude, this.longitude];
+		let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+		this.circle = L.circle(pos, radius, style);
+		this.circle.bindTooltip(this.name);
+		map.add(this.circle);
 	}
 }
 
@@ -373,7 +369,7 @@ class AutoAddedCache extends AddedCache {
 		this.circle = L.circle(pos, radius, style);
 		this.circle.bindTooltip(this.name);
 		map.add(this.circle);
-}
+	}
 }
 
 class Place extends POI {
@@ -386,11 +382,11 @@ class Place extends POI {
 	}
 
 	installCircle(radius = CACHE_RADIUS, color = 'black') {
-			let pos = [this.latitude, this.longitude];
-			let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
-			this.circle = L.circle(pos, radius, style);
-			this.circle.bindTooltip(this.name);
-			map.add(this.circle);
+		let pos = [this.latitude, this.longitude];
+		let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+		this.circle = L.circle(pos, radius, style);
+		this.circle.bindTooltip(this.name);
+		map.add(this.circle);
 	}
 }
 
@@ -406,13 +402,14 @@ class Map {
 			L.popup()
 				.setLatLng(e.latlng)
 				.setContent(`
-				<p>You clicked the map at  + ${e.latlng.toString()}</p>
+				<div class="popup">
+				<h2>${e.latlng.lat}, ${e.latlng.lat}</h2>
 				<a href=" http://maps.google.com/maps?layer=c&cbll=${e.latlng.lat}, ${e.latlng.lng}" target="_blank">
-    			<button>Street View</button>
+    			<button class="background-blue">Street View</button>
   				</a>
 
-				<button onClick="addCache(${e.latlng.lat}, ${e.latlng.lng})">New Cache</button>
-				
+				<button onClick="addCache(${e.latlng.lat}, ${e.latlng.lng})" class="background-green">New Cache</button>
+				</div>
 		`)
 		);
 		this.addedCacheCounter = 0; //for generating cache id
@@ -499,7 +496,7 @@ class Map {
 				if (getFirstValueByTagName(xs[i], "status") === STATUS_ENABLED) {
 					let ca = new Cache(xs[i]);
 					caches.push(ca);
-					
+
 				}
 		}
 		return caches;
@@ -533,7 +530,7 @@ class Map {
 	}
 
 	validateLocation(pos, ignore) {
-		let {lat, lng} = pos;
+		let { lat, lng } = pos;
 		let minimumDistance = Number.POSITIVE_INFINITY;
 
 		this.caches.forEach(cache => {
@@ -633,13 +630,13 @@ class Statistics {
 		const cachesByKind = this.getNumberOfCachesOfEachKind();
 
 		for (const kind of Object.keys(cachesByKind)) {
-			let amountElement = document.getElementById(kind+"-amount");
+			let amountElement = document.getElementById(kind + "-amount");
 
 
 			if (amountElement) {
 				amountElement.innerText = ` [${cachesByKind[kind]}]`;
 			}
-			
+
 		}
 
 	}
@@ -685,7 +682,7 @@ function onLoad() {
 		let icon = document.createElement('img');
 		let name = document.createElement('span');
 		let amount = document.createElement('span');
-		amount.id = kind+"-amount"
+		amount.id = kind + "-amount"
 
 		icon.src = RESOURCES_DIR + kind + ".png";
 		name.innerText = kind;
