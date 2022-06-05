@@ -59,6 +59,8 @@ const CACHES_FILE_NAME =
 	"caches.xml";
 const STATUS_ENABLED =
 	"E"
+const UNKNOWN_ALTITUDE =
+	-32768;
 
 
 /* GLOBAL VARIABLES */
@@ -657,8 +659,7 @@ class Statistics {
 	}
 
 	updatePresentationLayer() {
-		let statisticsElement = document.querySelector('#statistics'); //querying for the element with id="statistics"
-
+		
 		// Cache by kind:
 		const cachesByKind = this.getNumberOfCachesOfEachKind();
 
@@ -671,6 +672,43 @@ class Statistics {
 			}
 
 		}
+
+		let statisticsDiv = document.querySelector('#statistics'); //querying for the element with id="statistics"
+
+
+		let ownerElem;
+		if (!document.getElementById('staistic-max-alt')) {
+			ownerElem = document.createElement('p');
+			ownerElem.id = 'statistic-max-alt';
+		}
+		let prolificOwner = this.getMostProlificOwner();
+
+		ownerElem.innerText = `Most prolific owner: ${prolificOwner.name} (${prolificOwner.amount} caches)`;
+
+		statisticsDiv.appendChild(ownerElem);
+		
+
+		let highestElem;
+		if (!document.getElementById('staistic-max-alt')) {
+			highestElem = document.createElement('p');
+			highestElem.id = 'statistic-max-alt';
+		}
+		let highestCache = this.getCacheWithHighestAltitude();
+
+		highestElem.innerText = `Highest altitude: ${highestCache.name} (${highestCache.altitude}m)`;
+
+		statisticsDiv.appendChild(highestElem);
+
+		let lowestElem;
+		if (!document.getElementById('staistic-max-alt')) {
+			lowestElem = document.createElement('p');
+			lowestElem.id = 'statistic-max-alt';
+		}
+		let lowestCache = this.getCacheWithLowestAltitude();
+
+		lowestElem.innerText = `Lowest altitude: ${lowestCache.name} (${lowestCache.altitude}m)`;
+
+		statisticsDiv.appendChild(lowestElem);
 
 	}
 
@@ -687,7 +725,45 @@ class Statistics {
 	}
 
 	getCacheWithHighestAltitude() {
-		return this.caches.reduce()
+		return this.caches.reduce((highest, current) => current.altitude > highest.altitude ? current : highest);
+	}
+
+	getCacheWithLowestAltitude() {
+		return this.caches.filter(cache => cache.altitude != UNKNOWN_ALTITUDE)
+						.reduce((lowest, current) => {
+							if (current.altitude < lowest.altitude) {
+								return current;
+							}
+							return lowest;
+						});
+	}
+
+	getMostProlificOwner() {
+		let cachesByName = this.caches.filter(c => c.owner != "UNKNOWN" )
+			.reduce((cachesByName, currentCache) => {
+			let name = currentCache.owner;
+			if (name in cachesByName) {
+				cachesByName[name]++
+			}
+			else {
+				cachesByName[name] = 1
+			}
+			return cachesByName
+		  	}, {})
+
+		let result = {
+			name: "",
+			amount: 0
+		};
+
+		for (const owner in cachesByName) {
+			if (cachesByName[owner] > result.amount) {
+				result.name = owner;
+				result.amount = cachesByName[owner];
+			}
+		}
+
+		return result;
 	}
 
 }
