@@ -1,15 +1,19 @@
 /*     New Caches
 
-Aluno 1: ?number ?name <-- mandatory to fill
-Aluno 2: ?number ?name <-- mandatory to fill
+Aluno 1: 55100 Lourenco Catarino
+Aluno 2: 60774 Goncalo Gomes
 
 Comment:
 
-The file "newCaches.js" must include, in the first lines,
-an opening comment containing: the name and number of the two students who
-developd the project; indication of which parts of the work
-made and which were not made; possibly alerts to some aspects of the
-implementation that may be less obvious to the teacher.
+Implemented features:
+1. all features implemented
+2. all features implemented
+3. all features implemented
+4. partially implemented
+5. implemented
+6. not implemented
+
+
 
 
 
@@ -24,7 +28,7 @@ Leaflet documentation: https://leafletjs.com/reference.html
 /* GLOBAL CONSTANTS */
 
 const MAP_INITIAL_CENTRE =
-	[38.661,-9.2044];  // FCT coordinates
+	[38.661, -9.2044];  // FCT coordinates
 const MAP_INITIAL_ZOOM =
 	14
 const MAP_ID =
@@ -38,12 +42,12 @@ const MAP_URL =
 const MAP_ERROR =
 	"https://upload.wikimedia.org/wikipedia/commons/e/e0/SNice.svg";
 const MAP_LAYERS =
-	["streets-v11", "outdoors-v11", "light-v10", "dark-v10", "satellite-v9",
+	["dark-v10", "streets-v11", "outdoors-v11", "light-v10", "satellite-v9",
 		"satellite-streets-v11", "navigation-day-v1", "navigation-night-v1"]
 //const RESOURCES_DIR =
 //	"http//ctp.di.fct.unl.pt/lei/lap/projs/proj2122-3/resources/";
 const RESOURCES_DIR =
- 	"resources/";
+	"resources/";
 const CACHE_KINDS = ["CITO", "Earthcache", "Event",
 	"Letterbox", "Mega", "Multi", "Mystery", "Other",
 	"Traditional", "Virtual", "Webcam", "Wherigo"];
@@ -66,43 +70,40 @@ let map = null;
 /* USEFUL FUNCTIONS */
 
 // Capitalize the first letter of a string.
-function capitalize(str)
-{
+function capitalize(str) {
 	return str.length > 0
-			? str[0].toUpperCase() + str.slice(1)
-			: str;
+		? str[0].toUpperCase() + str.slice(1)
+		: str;
 }
 
 // Distance in km between to pairs of coordinates over the earth's surface.
 // https://en.wikipedia.org/wiki/Haversine_formula
-function haversine(lat1, lon1, lat2, lon2)
-{
-    function toRad(deg) { return deg * 3.1415926535898 / 180.0; }
-    let dLat = toRad(lat2 - lat1), dLon = toRad (lon2 - lon1);
-    let sa = Math.sin(dLat / 2.0), so = Math.sin(dLon / 2.0);
-    let a = sa * sa + so * so * Math.cos(toRad(lat1)) * Math.cos(toRad(lat2));
-    return 6372.8 * 2.0 * Math.asin (Math.sqrt(a));
+function haversine(lat1, lon1, lat2, lon2) {
+	function toRad(deg) { return deg * 3.1415926535898 / 180.0; }
+	let dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+	let sa = Math.sin(dLat / 2.0), so = Math.sin(dLon / 2.0);
+	let a = sa * sa + so * so * Math.cos(toRad(lat1)) * Math.cos(toRad(lat2));
+	return 6372.8 * 2.0 * Math.asin(Math.sqrt(a));
 }
 
-function loadXMLDoc(filename)
-{
+function loadXMLDoc(filename) {
 	let xhttp = new XMLHttpRequest();
 	xhttp.open("GET", filename, false);
 	try {
 		xhttp.send();
 	}
-	catch(err) {
+	catch (err) {
 		alert("Could not access the geocaching database via AJAX.\n"
 			+ "Therefore, no POIs will be visible.\n");
 	}
-	return xhttp.responseXML;	
+	return xhttp.responseXML;
 }
 
-function getAllValuesByTagName(xml, name)  {
+function getAllValuesByTagName(xml, name) {
 	return xml.getElementsByTagName(name);
 }
 
-function getFirstValueByTagName(xml, name)  {
+function getFirstValueByTagName(xml, name) {
 	return getAllValuesByTagName(xml, name)[0].childNodes[0].nodeValue;
 }
 
@@ -111,8 +112,17 @@ function kindIsPhysical(kind) {
 }
 
 function txt2xml(txt) {
-    let parser = new DOMParser();
-    return parser.parseFromString(txt,"text/xml");
+	let parser = new DOMParser();
+	return parser.parseFromString(txt, "text/xml");
+}
+
+function generateCSS(style) {
+	let result = '"';
+
+	for (const property of Object.keys(style)) {
+		result += `${property}: ${style[property]}; `;
+	}
+	return result += '"';
 }
 
 
@@ -121,29 +131,33 @@ function txt2xml(txt) {
 class POI {
 	constructor(xml) {
 		this.decodeXML(xml);
+
 	}
 
 	decodeXML(xml) {
-		if(xml === null)
+		if (xml === null)
 			return;
 		this.name = getFirstValueByTagName(xml, "name");
 		this.latitude = getFirstValueByTagName(xml, "latitude");
 		this.longitude = getFirstValueByTagName(xml, "longitude");
 	}
 
-	installCircle(radius, color) {
-		let pos = [this.latitude, this.longitude];
-		let style = {color: color, fillColor: color, weight: 1, fillOpacity: 0.1};
-		this.circle = L.circle(pos, radius, style);
-		this.circle.bindTooltip(this.name);
-		map.add(this.circle);	
-	}
+
 }
 
 class Cache extends POI {
 	constructor(xml) {
 		super(xml);
 		this.installMarker();
+		this.installCircle();
+	}
+
+	installCircle(radius = CACHE_RADIUS, color) {
+			let pos = [this.latitude, this.longitude];
+			let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+			this.circle = L.circle(pos, radius, style);
+			this.circle.bindTooltip(this.name);
+			map.add(this.circle);
 	}
 
 	decodeXML(xml) {
@@ -171,72 +185,145 @@ class Cache extends POI {
 
 	installMarker() {
 		let pos = [this.latitude, this.longitude];
-		this.marker = L.marker(pos, {icon: map.getIcon(this.kind)});
+		this.marker = L.marker(pos, { icon: map.getIcon(this.kind) });
 		this.marker.bindTooltip(this.name);
 
-		//Button function TBD
-		switch(this.kind) {
-			case "Multi":
-			case "Mystery":
-			case "Letterbox": 
-				this.marker.bindPopup(`I'm the marker of the cache ${this.name}.
-									  <p><button onClick="changeCacheLocation('${this.code}')">Change Location</button>
-									  <a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
-    								  <button>Info</button>
-  									  </a></p>`); break;
-			default:	
-				this.marker.bindPopup(`I'm the marker of the cache ${this.name}.
-									  <p><a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
-									  <button>Info</button>
-				  					  </a></p>`); break;
-		
-		}
-		//To add the function excluse to added caches
-		if(this.constructor.name == 'AddedCache'){
-			this.marker.bindPopup(`${this.marker.getPopup().getContent()}<button>Change Location</button><button>Delete</button>`)
-		}
+		this.marker.bindPopup(this.buildPopup())
 
 		map.add(this.marker);
+
 	}
+
+	
 
 	enableDragging() {
 		this.marker.dragging.enable();
+
+		if (this.circle) {
+			this.marker.on('drag', e => {
+				this.circle.setLatLng(e.latlng)
+				this.circle.redraw()
+			})
+		}
 	}
-	
+
 	disableDragging() {
 		this.marker.dragging.disable();
+
+		if (this.circle) {
+			this.marker.off('drag');
+		}
 	}
 
 	changeLocation() {
 		alert('Drag the marker to the new location.')
 		this.enableDragging();
 
-		this.marker.once('dragend', e => this.changeLocationHandler(e))
+		this.marker.once('dragend', () => this.changeLocationHandler())
 	}
 
-	changeLocationHandler(event) {
+	changeLocationHandler() {
 		this.disableDragging();
-		const {lat, lng} = this.marker.getLatLng(); //new location
+		const { lat, lng } = this.marker.getLatLng(); //new location
 
-		const locationValidity = map.validateLocation(lat, lng);
+		const locationValidity = map.validateLocation({ lat, lng }, this);
 
 		if (locationValidity === true) {
 			this.latitude = lat;
 			this.longitude = lng;
+			this.removeMarker();
+			this.installMarker();
 			alert(`Location of ${this.name} changed to ${lat}, ${lng}`)
 		} else {
-			this.marker.setLatLng({lat: this.latitude, lng: this.longitude}); //revert marker location
+			this.marker.setLatLng({ lat: this.latitude, lng: this.longitude }); //revert marker location
+			if (this.circle) {
+				this.circle.setLatLng({ lat: this.latitude, lng: this.longitude }) //revert circle location
+			}
 			alert(locationValidity.error);
 		}
+	}
+
+	removeMarker() {
+		this.marker.remove();
+	}
+
+	removeCircle() {
+		if (this.circle) {
+			this.circle.remove();
+		}
+	}
+
+	hide() {
+		this.removeMarker();
+		this.removeCircle();
+	}
+
+	show() {
+		this.installMarker();
+		this.installCircle();
+	}
+}
+
+/**
+ * Cache that has been loaded from file
+ */
+class OriginalCache extends Cache {
+	constructor(xml) {
+		super(xml)
+	}
+
+	installCircle(radius = CACHE_RADIUS, color = 'red') {
+		if (this.kind == 'Traditional') {
+			let pos = [this.latitude, this.longitude];
+			let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+			this.circle = L.circle(pos, radius, style);
+			this.circle.bindTooltip(this.name);
+			map.add(this.circle);
+		}
+	}
+
+	buildPopup() {
+
+		let popup = `
+			<div class="popup">
+				<h2>${this.name}</h2>
+
+				<!-- cache page -->
+				<a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
+					<button class="background-green">Info</button>
+	  			</a>
+
+				<!-- google street view -->
+				<a href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
+				 	<button class="background-blue">Street View</button>
+				</a>
+				
+			
+		`
+
+		switch (this.kind) {
+			case "Multi":
+			case "Mystery":
+			case "Letterbox":
+				popup+= 
+				`
+				<button onClick="changeCacheLocation('${this.code}')" class="background-orange">Change Location</button>
+				
+				`
+		}
+
+		popup+= '</div>';
+		return popup;
 	}
 }
 
 class AddedCache extends Cache {
 	constructor(lat, lng) {
+		let id = map.generateNewCacheId();
 		let txt =
-          `<cache>
-            <code>UNKNOWN</code>
-            <name>UNKNOWN</name>
+			`<cache>
+            <code>NGC${id}</code>
+            <name>New Cache ${id}</name>
             <owner>UNKNOWN</owner>
             <latitude>${lat}</latitude>
             <longitude>${lng}</longitude>
@@ -254,8 +341,53 @@ class AddedCache extends Cache {
             <status>E</status>
             <last_log>2000/01/01</last_log>
           </cache>`;
-        let xml = txt2xml(txt);
+		let xml = txt2xml(txt);
 		super(xml)
+	}
+
+	buildPopup() {
+
+		let popup = `
+			<div class="popup">
+				<h2>${this.name}</h2>
+
+				<!-- google street view button-->
+				<a href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
+				 	<button class="background-blue">Street View</button>
+				</a>
+
+				<!-- change location button -->
+				<button onClick="changeCacheLocation('${this.code}')" class="background-orange">Change Location</button>
+			
+				<!-- delete cache button -->	
+				<button onClick="deleteCache('${this.code}')" class="background-red">Delete</button>
+				</div>	
+		`
+		return popup;
+
+
+	}
+
+	installCircle(radius = CACHE_RADIUS, color = 'green') {
+		let pos = [this.latitude, this.longitude];
+		let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+		this.circle = L.circle(pos, radius, style);
+		this.circle.bindTooltip(this.name);
+		map.add(this.circle);
+	}
+}
+
+class AutoAddedCache extends AddedCache {
+	constructor(lat, lng) {
+		super(lat, lng)
+	}
+
+	installCircle(radius = CACHE_RADIUS, color = 'blue') {
+		let pos = [this.latitude, this.longitude];
+		let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+		this.circle = L.circle(pos, radius, style);
+		this.circle.bindTooltip(this.name);
+		map.add(this.circle);
 	}
 }
 
@@ -265,7 +397,15 @@ class Place extends POI {
 		this.name = name;
 		this.latitude = pos[0];
 		this.longitude = pos[1];
-		this.installCircle(CACHE_RADIUS, 'black');
+		this.installCircle();
+	}
+
+	installCircle(radius = CACHE_RADIUS, color = 'black') {
+		let pos = [this.latitude, this.longitude];
+		let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+		this.circle = L.circle(pos, radius, style);
+		this.circle.bindTooltip(this.name);
+		map.add(this.circle);
 	}
 }
 
@@ -279,20 +419,22 @@ class Map {
 		this.caches = [];
 		this.addClickHandler(e =>
 			L.popup()
-			.setLatLng(e.latlng) 
-			.setContent(`
-				<p>You clicked the map at  + ${e.latlng.toString()}</p>
+				.setLatLng(e.latlng)
+				.setContent(`
+				<div class="popup">
+				<h2>${e.latlng.lat}, ${e.latlng.lat}</h2>
 				<a href=" http://maps.google.com/maps?layer=c&cbll=${e.latlng.lat}, ${e.latlng.lng}" target="_blank">
-    			<button>Street View</button>
+    			<button class="background-blue">Street View</button>
   				</a>
 
-				<button onClick="addCache(${e.latlng.lat}, ${e.latlng.lng})">New Cache</button>
-				
+				<button onClick="addCache(${e.latlng.lat}, ${e.latlng.lng})" class="background-green">New Cache</button>
+				</div>
 		`)
 		);
-		
+		this.addedCacheCounter = 0; //for generating cache id
+
 	}
-	
+
 
 	populate() {
 		this.caches = this.loadCaches(RESOURCES_DIR + CACHES_FILE_NAME);
@@ -318,25 +460,25 @@ class Map {
 		let errorTileUrl = MAP_ERROR;
 		let layer =
 			L.tileLayer(urlTemplate, {
-					minZoom: 6,
-					maxZoom: 19,
-					errorTileUrl: errorTileUrl,
-					id: spec,
-					tileSize: 512,
-					zoomOffset: -1,
-					attribution: attr
+				minZoom: 6,
+				maxZoom: 19,
+				errorTileUrl: errorTileUrl,
+				id: spec,
+				tileSize: 512,
+				zoomOffset: -1,
+				attribution: attr
 			});
 		return layer;
 	}
 
 	addBaseLayers(specs) {
 		let baseMaps = [];
-		for(let i in specs)
+		for (let i in specs)
 			baseMaps[capitalize(specs[i])] =
 				this.makeMapLayer(specs[i], "mapbox/" + specs[i]);
 		baseMaps[capitalize(specs[0])].addTo(this.lmap);
-		L.control.scale({maxWidth: 150, metric: true, imperial: false})
-									.setPosition("topleft").addTo(this.lmap);
+		L.control.scale({ maxWidth: 150, metric: true, imperial: false })
+			.setPosition("topleft").addTo(this.lmap);
 		L.control.layers(baseMaps, {}).setPosition("topleft").addTo(this.lmap);
 		return baseMaps;
 	}
@@ -352,7 +494,7 @@ class Map {
 			shadowAnchor: [8, 8],
 			popupAnchor: [0, -6] // offset the determines where the popup should open
 		};
-		for(let i = 0 ; i < CACHE_KINDS.length ; i++) {
+		for (let i = 0; i < CACHE_KINDS.length; i++) {
 			iconOptions.iconUrl = dir + CACHE_KINDS[i] + ".png";
 			iconOptions.shadowUrl = dir + "Alive.png";
 			icons[CACHE_KINDS[i]] = L.icon(iconOptions);
@@ -364,17 +506,16 @@ class Map {
 
 	loadCaches(filename) {
 		let xmlDoc = loadXMLDoc(filename);
-		let xs = getAllValuesByTagName(xmlDoc, "cache"); 
+		let xs = getAllValuesByTagName(xmlDoc, "cache");
 		let caches = [];
-		if(xs.length === 0)
+		if (xs.length === 0)
 			alert("Empty cache file");
 		else {
-			for(let i = 0 ; i < xs.length ; i++)  // Ignore the disabled caches
-				if( getFirstValueByTagName(xs[i], "status") === STATUS_ENABLED ){
-					let ca = new Cache(xs[i]);
+			for (let i = 0; i < xs.length; i++)  // Ignore the disabled caches
+				if (getFirstValueByTagName(xs[i], "status") === STATUS_ENABLED) {
+					let ca = new OriginalCache(xs[i]);
 					caches.push(ca);
-					if(ca.kind == 'Traditional')
-						ca.installCircle(CACHE_RADIUS, 'red');
+
 				}
 		}
 		return caches;
@@ -407,13 +548,21 @@ class Map {
 		return this.lmap.on('click', handler2);
 	}
 
-	validateLocation(lat, lng) {
-		let minimumDistance = Number.POSITIVE_INFINITY;
+	validateLocation(pos, ignore) {
+		let { lat, lng } = pos;
+		let minimumDistanceToCache = Number.POSITIVE_INFINITY;
+		let minimumDistanceToOriginalCache = Number.POSITIVE_INFINITY;
 
 		this.caches.forEach(cache => {
-			const distance = haversine(cache.latitude, cache.longitude, lat, lng) * 1000;//km to m
-			if (distance < minimumDistance) {
-				minimumDistance = distance;
+			if (cache != ignore) {
+				const distance = haversine(cache.latitude, cache.longitude, lat, lng) * 1000;//km to m
+				if (distance < minimumDistanceToCache) {
+					minimumDistanceToCache = distance;
+				}
+
+				if (cache instanceof OriginalCache && distance < minimumDistanceToOriginalCache) {
+					minimumDistanceToOriginalCache = distance;
+				}
 			}
 			if (cache != ignore) {
 				const distance = haversine(cache.latitude, cache.longitude, lat, lng) * 1000;//km to m
@@ -427,12 +576,12 @@ class Map {
 			}
 		})
 
-		if (minimumDistance < CACHE_RADIUS) {
-			return {error: `Cache is too close: ${minimumDistance.toFixed(1)}m to nearest cache, minimum is ${CACHE_RADIUS}m`}
+		if (minimumDistanceToCache < CACHE_RADIUS) {
+			return { error: `Cache is too close: ${minimumDistanceToCache.toFixed(1)}m to nearest cache, minimum is ${CACHE_RADIUS}m` }
 		}
 
-		if (minimumDistance > MAX_CACHE_DISTANCE) {
-			return {error: `Cache is too far: ${minimumDistance.toFixed(1)}m to nearest cache, maximum is ${MAX_CACHE_DISTANCE}m`}
+		if (minimumDistanceToOriginalCache > MAX_CACHE_DISTANCE) {
+			return { error: `Cache is too far: ${minimumDistanceToOriginalCache.toFixed(1)}m to nearest file loaded cache, maximum is ${MAX_CACHE_DISTANCE}m` }
 		}
 
 		return true;
@@ -445,9 +594,9 @@ class Map {
 
 	getCacheByCode(code) {
 		for (const cache of this.caches) {
-			if(cache.code == code){
+			if (cache.code == code) {
 				return cache;
-			}	
+			}
 		}
 		return null;
 	}
@@ -549,23 +698,17 @@ class Statistics {
 	updatePresentationLayer() {
 		let statisticsElement = document.querySelector('#statistics'); //querying for the element with id="statistics"
 
-		// Cache by kind statistics:
+		// Cache by kind:
 		const cachesByKind = this.getNumberOfCachesOfEachKind();
 
-		for (const pair of Object.entries(cachesByKind)) {
-			const kind = pair[0];
-			const amount = pair[1];
-			
-			try {//TODO
-				let line = statisticsElement.querySelector(`#shapeByKind:${kind}`);
+		for (const kind of Object.keys(cachesByKind)) {
+			let amountElement = document.getElementById(kind + "-amount");
 
-				line.querySelector('span').innerHTML = amount;
-			} catch (error) {
-				let line = document.createElement('p');
-				line.innerHTML = `<p id="shapeByKind:${kind}" style="padding-left: 12px; margin: 0;">${kind}: <span >${amount}</span></p>`;
-				statisticsElement.appendChild(line);
+
+			if (amountElement) {
+				amountElement.innerText = ` [${cachesByKind[kind]}]`;
 			}
-			
+
 		}
 
 	}
@@ -596,21 +739,44 @@ class Statistics {
    this program must be written using the object-oriented style.
 */
 
-function onLoad()
-{
+function onLoad() {
+	let cacheKindsElement = document.getElementById('cache-kinds');
+
+	for (const kind of CACHE_KINDS) {
+		let line = document.createElement('p');
+		let checkbox = document.createElement('input');
+		checkbox.type = 'checkbox';
+		checkbox.checked = true;
+		checkbox.addEventListener('change', (e) => {
+			console.log(e.target.checked, kind)
+			map.showCachesOfKind(e.target.checked, kind)
+		})
+		let icon = document.createElement('img');
+		let name = document.createElement('span');
+		let amount = document.createElement('span');
+		amount.id = kind + "-amount"
+
+		icon.src = RESOURCES_DIR + kind + ".png";
+		name.innerText = kind;
+		line.appendChild(checkbox);
+		line.appendChild(icon);
+		line.appendChild(name);
+		line.appendChild(amount);
+		cacheKindsElement.appendChild(line);
+	}
+
 	map = new Map(MAP_INITIAL_CENTRE, MAP_INITIAL_ZOOM);
 	map.showFCT();
 	map.populate();
 }
 
 function addCache(lat, lng) {
-	const locationValidity = map.validateLocation(lat, lng);
+	const locationValidity = map.validateLocation({ lat, lng });
 	if (locationValidity.error) {
 		alert(locationValidity.error)
 	} else {
 		const newCache = new AddedCache(lat, lng);
 		map.addCache(newCache);
-		newCache.installCircle(CACHE_RADIUS, 'green');
 	}
 }
 
@@ -618,32 +784,16 @@ function changeCacheLocation(code) {
 	map.changeCacheLocation(code);
 }
 
-function newRandomCache() {
-	min = Math.ceil(0);
-  	max = Math.floor(map.caches.length++);
-  	oldCache = map.caches[Math.floor(Math.random() * (max - min) + min)];
-	oldCache.installCircle(CACHE_RADIUS, 'orange');
-
-	let pos;
-	do{
-		pos = generateCoordinates();
-	}while(map.validateLocation(pos.lat, pos.lng) != true);
-
-	const newCache = new AddedCache(pos.lat, pos.lng);
-	map.addCache(newCache);
-	newCache.installCircle(CACHE_RADIUS, 'blue');
+function deleteCache(code) {
+	map.deleteCache(code);
 }
 
-function generateCoordinates()
-{
-	rad = (Math.random() * (1 - -1) + -1).toFixed(4);
+function newRandomCache() {
+	map.newRandomCache();
+}
+
 function manyNewRandomCaches() {
 	map.manyNewRandomCaches();
 }
 
 
- 	const lat = (parseFloat(oldCache.latitude) + ((Math.sin(rad)) * 0.004)).toFixed(8);
-	const lng = (parseFloat(oldCache.longitude) + ((Math.cos(rad)) * 0.004)).toFixed(8);
-
-	return {lat, lng};
-}
