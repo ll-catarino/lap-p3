@@ -6,14 +6,19 @@ Aluno 2: 60774 Goncalo Gomes
 Comment:
 
 Implemented features:
-1. all features implemented
-2. all features implemented
-3. all features implemented
-4. partially implemented
-5. implemented
-6. not implemented
+	All features implemented
 
 
+
+/*
+ The generation of as many caches as possible is done by the function, defined in the Map 
+class, named manyNewRandomCaches().
+ This function works by iterating through the existing list of caches and then attempting 
+to create a new cahce around that "original one" 10 times.
+ The function counts how many caches were placed and the value is then anounced when 
+the function finishes generating new caches.
+
+More detailed description is available next to the function itself
 
 
 
@@ -622,6 +627,35 @@ class Map {
 		}
 	}
 	
+	/*
+	 The generation of as many caches as possible is done by the function named 
+	manyNewRandomCaches().
+	 This function creates a variable total to count the amount of caches created and starts a 
+	for loop of generation passes.
+	 WARNING: these passes have exponential growth, since they iterate over the whole array of 
+	caches, which is in turn being increased by the function itself, meaning that
+	if the max distance is increased, the whole function will take much longer to execute.
+	
+	 Next, the generationPass() function is called. This function registers the current total 
+	as 0 and then starts to iterate the existing array (it will not make a pass over the 
+	newly created caches, only the ones that exist already). For each existing cache, the 
+	function will then try to create a new cache in a location close to the chosen 
+	cache. For this, it attempts to generate a set off coordinates close to the chosen cache.
+	 Each attempt is limited to 10 miliseconds, otherwise, too much time
+	would be wasted looking at invalid spots.
+	 If a set of valid coordinates is created, a new cache is created and the total variable is 
+	increased. Otherwise the function simply tries again. This stops after 10 tries, 
+	successfull or not.
+
+	 The function that generates the coordinates works by getting two random values
+		 The first is used in the sin() and cos() functions to choose a random angle at which the 
+		coordinates will be created, centered on an already existing cache.
+		 The second is used to place the new set of coordinates a certain distance away from the 
+		"original" cache.
+	 These two variables are useed to create a new set of coordinates relatively close to the 
+	"original cache". They are still checked of course, as the original location could be
+	obstructed or not valid to start with (although, with the method in place that should be very rare).
+	*/
 	manyNewRandomCaches() {
 		let total = 0;
 		for(let i = 0; i < 2; i++)
