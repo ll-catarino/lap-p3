@@ -152,14 +152,12 @@ class Cache extends POI {
 		this.installCircle();
 	}
 
-	installCircle(radius = CACHE_RADIUS, color = 'red') {
-		if (this.kind == 'Traditional') {
+	installCircle(radius = CACHE_RADIUS, color) {
 			let pos = [this.latitude, this.longitude];
 			let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
 			this.circle = L.circle(pos, radius, style);
 			this.circle.bindTooltip(this.name);
 			map.add(this.circle);
-		}
 	}
 
 	decodeXML(xml) {
@@ -196,39 +194,7 @@ class Cache extends POI {
 
 	}
 
-	buildPopup() {
-
-		let popup = `
-			<div class="popup">
-				<h2>${this.name}</h2>
-
-				<!-- cache page -->
-				<a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
-					<button class="background-green">Info</button>
-	  			</a>
-
-				<!-- google street view -->
-				<a href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
-				 	<button class="background-blue">Street View</button>
-				</a>
-				
-			
-		`
-
-		switch (this.kind) {
-			case "Multi":
-			case "Mystery":
-			case "Letterbox":
-				popup+= 
-				`
-				<button onClick="changeCacheLocation('${this.code}')" class="background-orange">Change Location</button>
-				
-				`
-		}
-
-		popup+= '</div>';
-		return popup;
-	}
+	
 
 	enableDragging() {
 		this.marker.dragging.enable();
@@ -295,6 +261,59 @@ class Cache extends POI {
 	show() {
 		this.installMarker();
 		this.installCircle();
+	}
+}
+
+/**
+ * Cache that has been loaded from file
+ */
+class OriginalCache extends Cache {
+	constructor(xml) {
+		super(xml)
+	}
+
+	installCircle(radius = CACHE_RADIUS, color = 'red') {
+		if (this.kind == 'Traditional') {
+			let pos = [this.latitude, this.longitude];
+			let style = { color: color, fillColor: color, weight: 1, fillOpacity: 0.1 };
+			this.circle = L.circle(pos, radius, style);
+			this.circle.bindTooltip(this.name);
+			map.add(this.circle);
+		}
+	}
+
+	buildPopup() {
+
+		let popup = `
+			<div class="popup">
+				<h2>${this.name}</h2>
+
+				<!-- cache page -->
+				<a href=" https://www.geocaching.com/geocache/${this.code}" target="_blank">
+					<button class="background-green">Info</button>
+	  			</a>
+
+				<!-- google street view -->
+				<a href=" http://maps.google.com/maps?layer=c&cbll=${this.latitude}, ${this.longitude}" target="_blank">
+				 	<button class="background-blue">Street View</button>
+				</a>
+				
+			
+		`
+
+		switch (this.kind) {
+			case "Multi":
+			case "Mystery":
+			case "Letterbox":
+				popup+= 
+				`
+				<button onClick="changeCacheLocation('${this.code}')" class="background-orange">Change Location</button>
+				
+				`
+		}
+
+		popup+= '</div>';
+		return popup;
 	}
 }
 
@@ -494,7 +513,7 @@ class Map {
 		else {
 			for (let i = 0; i < xs.length; i++)  // Ignore the disabled caches
 				if (getFirstValueByTagName(xs[i], "status") === STATUS_ENABLED) {
-					let ca = new Cache(xs[i]);
+					let ca = new OriginalCache(xs[i]);
 					caches.push(ca);
 
 				}
@@ -531,23 +550,28 @@ class Map {
 
 	validateLocation(pos, ignore) {
 		let { lat, lng } = pos;
-		let minimumDistance = Number.POSITIVE_INFINITY;
+		let minimumDistanceToCache = Number.POSITIVE_INFINITY;
+		let minimumDistanceToOriginalCache = Number.POSITIVE_INFINITY;
 
 		this.caches.forEach(cache => {
 			if (cache != ignore) {
 				const distance = haversine(cache.latitude, cache.longitude, lat, lng) * 1000;//km to m
-				if (distance < minimumDistance) {
-					minimumDistance = distance;
+				if (distance < minimumDistanceToCache) {
+					minimumDistanceToCache = distance;
+				}
+
+				if (cache instanceof OriginalCache && distance < minimumDistanceToOriginalCache) {
+					minimumDistanceToOriginalCache = distance;
 				}
 			}
 		})
 
-		if (minimumDistance < CACHE_RADIUS) {
-			return { error: `Cache is too close: ${minimumDistance.toFixed(1)}m to nearest cache, minimum is ${CACHE_RADIUS}m` }
+		if (minimumDistanceToCache < CACHE_RADIUS) {
+			return { error: `Cache is too close: ${minimumDistanceToCache.toFixed(1)}m to nearest cache, minimum is ${CACHE_RADIUS}m` }
 		}
 
-		if (minimumDistance > MAX_CACHE_DISTANCE) {
-			return { error: `Cache is too far: ${minimumDistance.toFixed(1)}m to nearest cache, maximum is ${MAX_CACHE_DISTANCE}m` }
+		if (minimumDistanceToOriginalCache > MAX_CACHE_DISTANCE) {
+			return { error: `Cache is too far: ${minimumDistanceToOriginalCache.toFixed(1)}m to nearest file loaded cache, maximum is ${MAX_CACHE_DISTANCE}m` }
 		}
 
 		return true;
